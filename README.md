@@ -61,6 +61,17 @@ npm test
 npm run build
 ```
 
+## Test Coverage
+
+| Category | Statements | Branches | Functions | Lines |
+| :--- | :--- | :--- | :--- | :--- |
+| **All Files** | **88.01%** | **77.23%** | **96.55%** | **89.21%** |
+| Detectors | 100% | 100% | 100% | 100% |
+| Formatters | 100% | 100% | 100% | 100% |
+| Security | 100% | 100% | 100% | 100% |
+| Utils | 94.26% | 80.55% | 100% | 98.03% |
+| Validators | 78.46% | 65.57% | 92.30% | 78.90% |
+
 ## Contributing
 
 We welcome contributions! Please follow these steps to set up your development environment:
