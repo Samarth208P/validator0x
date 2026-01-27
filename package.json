@@ -1,5 +1,5 @@
 {
-  "name": "@samarth208p/validator0x",
+  "name": "validator0x",
   "version": "0.1.0",
   "description": "Multi-chain wallet address validator and formatter for Ethereum, Solana, Bitcoin, and Polygon. Prevents sending crypto to invalid addresses.",
   "main": "dist/index.cjs.js",
@@ -14,9 +14,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Samarth208P/validator0x.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "build": "rimraf dist && rollup -c rollup.config.mjs && tsc --emitDeclarationOnly",
