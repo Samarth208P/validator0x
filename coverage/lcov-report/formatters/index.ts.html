@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">28.57% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/14</span>
+                <span class='fraction'>14/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">30.76% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -91,58 +91,58 @@
 <a name='L26'></a><a href='#L26'>26</a>
 <a name='L27'></a><a href='#L27'>27</a>
 <a name='L28'></a><a href='#L28'>28</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { BlockchainType, FormatOptions } from '../types';
 import { EthereumValidator } from '../validators/ethereum';
 import { stripHexPrefix, addHexPrefix } from '../utils/hex';
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >shortenAddress(</span>address: string, chars = <span class="branch-0 cbranch-no" title="branch not covered" >4)</span>: string {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!address || address.length &lt; chars * 2 + 2) <span class="cstat-no" title="statement not covered" >return address;</span></span>
-<span class="cstat-no" title="statement not covered" >    return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;</span>
+export function shortenAddress(address: string, chars = 4): string {
+    if (!address || address.length &lt; chars * 2 + 2) return address;
+    return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >normalizeAddress(</span>address: string, blockchain: BlockchainType): string {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (blockchain === 'ethereum' || blockchain === 'polygon') {</span>
-<span class="cstat-no" title="statement not covered" >        return address.toLowerCase();</span>
+export function normalizeAddress(address: string, blockchain: BlockchainType): string {
+    if (blockchain === 'ethereum' || blockchain === 'polygon') {
+        return address.toLowerCase();
     }
     // Solana and Bitcoin are case sensitive
-<span class="cstat-no" title="statement not covered" >    return address;</span>
+    return address;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >addChecksum(</span>address: string, blockchain: BlockchainType): string {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (blockchain === 'ethereum' || blockchain === 'polygon') {</span>
+export function addChecksum(address: string, blockchain: BlockchainType): string {
+    if (blockchain === 'ethereum' || blockchain === 'polygon') {
         // Use Ethereum validator's logic exposed or duplicated?
         // Since it's utils, we can instantiate or just duplicate the simple logic.
         // Better to use the class to ensure consistency.
-        const validator = <span class="cstat-no" title="statement not covered" >new EthereumValidator();</span>
-<span class="cstat-no" title="statement not covered" >        return validator.format(address, { checksum: true });</span>
+        const validator = new EthereumValidator();
+        return validator.format(address, { checksum: true });
     }
-<span class="cstat-no" title="statement not covered" >    return address;</span>
+    return address;
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -151,7 +151,7 @@ export function <span class="fstat-no" title="function not covered" >addChecksum
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-27T13:00:53.027Z
+                at 2026-01-27T13:52:01.587Z
             </div>
         <script src="../prettify.js"></script>
         <script>
