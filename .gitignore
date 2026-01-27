@@ -1,0 +1,5 @@
+node_modules
+dist
+build_error.txt
+*.log
+.DS_Store
