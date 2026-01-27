@@ -1,6 +1,6 @@
 {
   "name": "validator0x",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Multi-chain wallet address validator and formatter for Ethereum, Solana, Bitcoin, and Polygon. Prevents sending crypto to invalid addresses.",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
