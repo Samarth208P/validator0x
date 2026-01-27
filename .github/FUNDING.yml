@@ -6,14 +6,5 @@ github: [Samarth208P]
 # Buy Me a Coffee - One-time donations and memberships
 buy_me_a_coffee: samarth208p
 
-# Custom sponsorship URLs - Ethereum wallet for Web3-native supporters
-custom: ['https://etherscan.io/address/0xEe4055Dd5E4896aC50f308eE7846037490482F1f']
-
-# Other platforms (uncomment and add if you set them up later)
-# patreon: your_patreon_username
-# ko_fi: your_kofi_username
-# open_collective: your_collective_name
-# polar: your_polar_username
-# liberapay: your_liberapay_username
-# issuehunt: your_issuehunt_username
-# tidelift: npm/your-package-name
+# Custom sponsorship URLs - Direct crypto payment options
+custom: ['ethereum:0xEe4055Dd5E4896aC50f308eE7846037490482F1f', 'https://etherscan.io/address/0xEe4055Dd5E4896aC50f308eE7846037490482F1f']
