@@ -26,5 +26,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Prepare Clean README for npm
+        run: node scripts/prepare-publish.js
+
       - name: Publish to npm
         run: npm publish --access public --provenance --ignore-scripts
