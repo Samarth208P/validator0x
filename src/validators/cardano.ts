@@ -1,24 +1,24 @@
 import { AddressValidator } from './base';
-import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { decodeBase58 } from '../utils/base58';
 import { decodeBech32 } from '../utils/bech32';
 
 export class CardanoValidator extends AddressValidator {
-    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+    protected validateImplementation(address: string): ValidationResult {
         // 1. Check Shelley Era (Bech32 started with addr1 or addr_test1)
         if (address.startsWith('addr1') || address.startsWith('addr_test1') || address.startsWith('stake1') || address.startsWith('stake_test1')) {
-            return this.validateShelley(address, options);
+            return this.validateShelley(address);
         }
 
         // 2. Check Byron Era (Base58, usually starts with A, D, or Ae2)
         if (address.startsWith('A') || address.startsWith('D') || address.startsWith('Ae2')) {
-            return this.validateByron(address, options);
+            return this.validateByron(address);
         }
 
         return { valid: false, error: 'Unknown Cardano format', details: { errorCode: ValidationError.INVALID_FORMAT } };
     }
 
-    private validateShelley(address: string, options?: ValidationOptions): ValidationResult {
+    private validateShelley(address: string): ValidationResult {
         const decoded = decodeBech32(address);
         if (!decoded) {
             return { valid: false, error: 'Invalid Bech32 encoding', details: { errorCode: ValidationError.INVALID_FORMAT } };
@@ -34,7 +34,7 @@ export class CardanoValidator extends AddressValidator {
         return { valid: true, blockchain: 'cardano', details: { format: 'shelley', network } };
     }
 
-    private validateByron(address: string, options?: ValidationOptions): ValidationResult {
+    private validateByron(address: string): ValidationResult {
         try {
             // Byron addresses use standard Base58 but have a complex CBOR structure.
             // A comprehensive check requires a CBOR parser. 

@@ -1,4 +1,4 @@
-import { validateAddress } from '../src/index';
+import { validateAddress, LitecoinValidator } from '../src';
 
 describe('Litecoin Validator', () => {
     it('validates correct legacy and P2SH addresses', () => {
@@ -24,8 +24,7 @@ describe('Litecoin Validator', () => {
         // We just test format
     });
 
-    it('formats litecoin addresses', () => {
-        const { LitecoinValidator } = require('../src/validators/litecoin');
+    test('formats address correctly', () => {
         const validator = new LitecoinValidator();
         const addr = 'LVg2kJoFNg45Nbpy53h7Fe1wKyeXVRhMH9';
         expect(validator.format(addr)).toBe(addr);

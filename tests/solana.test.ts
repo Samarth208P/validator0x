@@ -1,4 +1,4 @@
-import { validateAddress } from '../src';
+import { validateAddress, SolanaValidator } from '../src';
 import { ValidationError } from '../src/types';
 
 describe('Solana Validator', () => {
@@ -53,7 +53,6 @@ describe('Solana Validator', () => {
 
 describe('Formatting', () => {
     test('formats address correctly', () => {
-        const { SolanaValidator } = require('../src/validators/solana');
         const validator = new SolanaValidator();
         const addr = 'HN7cABqLq46Es1jh92dQQy4aWDtG751BHhP1K2HWT7k1';
         expect(validator.format(addr)).toBe(addr);

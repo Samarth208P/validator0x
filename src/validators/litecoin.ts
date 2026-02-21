@@ -1,25 +1,25 @@
 import { AddressValidator } from './base';
-import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { decodeBase58 } from '../utils/base58';
 import { decodeBech32, Bech32Encoding } from '../utils/bech32';
 import { sha256 } from '../utils/sha256';
 
 export class LitecoinValidator extends AddressValidator {
-    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+    protected validateImplementation(address: string): ValidationResult {
         // 1. Check Legacy or P2SH (Starts with L or M, Base58)
         if (address.startsWith('L') || address.startsWith('M')) {
-            return this.validateLegacy(address, options);
+            return this.validateLegacy(address);
         }
 
         // 2. Check SegWit (Starts with ltc1)
         if (address.toLowerCase().startsWith('ltc1')) {
-            return this.validateBech32(address, options);
+            return this.validateBech32(address);
         }
 
         return { valid: false, error: 'Unknown format', details: { errorCode: ValidationError.INVALID_FORMAT } };
     }
 
-    private validateLegacy(address: string, options?: ValidationOptions): ValidationResult {
+    private validateLegacy(address: string): ValidationResult {
         if (address.length < 26 || address.length > 35) {
             return { valid: false, error: 'Invalid length', details: { errorCode: ValidationError.INVALID_LENGTH } };
         }
@@ -45,7 +45,7 @@ export class LitecoinValidator extends AddressValidator {
         }
     }
 
-    private validateBech32(address: string, options?: ValidationOptions): ValidationResult {
+    private validateBech32(address: string): ValidationResult {
         const decoded = decodeBech32(address);
         if (!decoded) {
             return { valid: false, error: 'Invalid Bech32 encoding', details: { errorCode: ValidationError.INVALID_FORMAT } };

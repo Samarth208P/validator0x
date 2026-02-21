@@ -1,5 +1,4 @@
 import { validateAddress, detectBlockchain } from '../src';
-import { ValidationError } from '../src/types';
 
 describe('Polygon Validator', () => {
     test('should validate Polygon address', () => {

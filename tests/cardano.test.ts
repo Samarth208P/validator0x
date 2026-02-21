@@ -1,6 +1,5 @@
 import { validateAddress } from '../src/index';
 
-import { Bech32Encoding } from '../src/utils/bech32';
 const BECH32_ALPHABET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 
 function polymod(values: number[]): number {

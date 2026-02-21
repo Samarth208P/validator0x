@@ -1,5 +1,5 @@
 import { AddressValidator } from './base';
-import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { sha256 } from '../utils/sha256';
 
 // Ripple uses a custom Base58 dictionary
@@ -60,7 +60,7 @@ function decodeRippleBase58(string: string): Uint8Array {
 }
 
 export class RippleValidator extends AddressValidator {
-    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+    protected validateImplementation(address: string): ValidationResult {
         // Ripple addresses always start with 'r'
         if (!address.startsWith('r')) {
             return { valid: false, error: 'Must start with r', details: { errorCode: ValidationError.INVALID_FORMAT } };

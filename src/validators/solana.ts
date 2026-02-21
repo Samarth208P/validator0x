@@ -1,9 +1,9 @@
 import { AddressValidator } from './base';
-import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { decodeBase58 } from '../utils/base58';
 
 export class SolanaValidator extends AddressValidator {
-    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+    protected validateImplementation(address: string): ValidationResult {
         if (address.length < 32 || address.length > 44) {
             return { valid: false, error: 'Invalid length', details: { errorCode: ValidationError.INVALID_LENGTH } };
         }

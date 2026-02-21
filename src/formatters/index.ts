@@ -1,6 +1,5 @@
-import { BlockchainType, FormatOptions } from '../types';
+import { BlockchainType } from '../types';
 import { EthereumValidator } from '../validators/ethereum';
-import { stripHexPrefix, addHexPrefix } from '../utils/hex';
 
 export function shortenAddress(address: string, chars = 4): string {
     if (!address || address.length < chars * 2 + 2) return address;

@@ -1,4 +1,4 @@
-import { validateAddress, formatAddress } from '../src';
+import { validateAddress } from '../src';
 import { ValidationError } from '../src/types';
 
 describe('Polygon Validator', () => {

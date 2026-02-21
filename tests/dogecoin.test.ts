@@ -1,4 +1,4 @@
-import { validateAddress } from '../src/index';
+import { validateAddress, DogecoinValidator } from '../src/index';
 
 describe('Dogecoin Validator', () => {
     it('validates correct dogecoin addresses', () => {
@@ -18,7 +18,6 @@ describe('Dogecoin Validator', () => {
     });
 
     it('formats dogecoin addresses', () => {
-        const { DogecoinValidator } = require('../src/validators/dogecoin');
         const validator = new DogecoinValidator();
         const addr = 'D59T4ioHyHdJ6SDzpE8mdz7ssh3atQqjiG';
         expect(validator.format(addr)).toBe(addr);

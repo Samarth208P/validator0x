@@ -7,21 +7,23 @@ export abstract class AddressValidator {
      * @param address - The address string to validate
      * @param options - Validation options
      */
-    public validate(address: string, options?: ValidationOptions): ValidationResult {
+    public validate(address: string, _options?: ValidationOptions): ValidationResult {
         try {
+            void _options;
             // Security: Sanitize input first
             const safeAddress = InputSanitizer.sanitize(address);
 
             // Perform validation on sanitized input
-            return this.validateImplementation(safeAddress, options);
-        } catch (error: any) {
-            if (error.message === ValidationError.UNSAFE_INPUT) {
+            return this.validateImplementation(safeAddress);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (message === ValidationError.UNSAFE_INPUT) {
                 return { valid: false, error: 'Unsafe input detected', details: { errorCode: ValidationError.UNSAFE_INPUT } };
             }
-            return { valid: false, error: error.message };
+            return { valid: false, error: message };
         }
     }
 
-    protected abstract validateImplementation(address: string, options?: ValidationOptions): ValidationResult;
+    protected abstract validateImplementation(address: string): ValidationResult;
     public abstract format(address: string, options?: FormatOptions): string;
 }

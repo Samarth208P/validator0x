@@ -1,4 +1,4 @@
-import { validateAddress } from '../src/index';
+import { validateAddress, RippleValidator } from '../src/index';
 
 describe('Ripple Validator', () => {
     it('validates correct ripple address', () => {
@@ -20,8 +20,7 @@ describe('Ripple Validator', () => {
         expect(validateAddress('rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr', 'ripple').valid).toBe(false);
     });
 
-    it('formats ripple addresses', () => {
-        const { RippleValidator } = require('../src/validators/ripple');
+    test('formats address correctly', () => {
         const validator = new RippleValidator();
         expect(validator.format('rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY')).toBe('rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY');
         expect(validator.format('rPEPPER7kfTD9w2To4CQk6UCfuHM9c6GDY', { shorten: true })).toBe('rPEP...6GDY');

@@ -1,5 +1,4 @@
-import { validateAddress } from '../src';
-import { ValidationError } from '../src/types';
+import { validateAddress, BitcoinValidator } from '../src';
 
 describe('Bitcoin Validator', () => {
     describe('Legacy (P2PKH)', () => {
@@ -68,7 +67,6 @@ describe('Bitcoin Validator', () => {
 
     describe('Formatting', () => {
         test('formats address correctly', () => {
-            const { BitcoinValidator } = require('../src/validators/bitcoin');
             const validator = new BitcoinValidator();
             const addr = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
             expect(validator.format(addr)).toBe(addr);

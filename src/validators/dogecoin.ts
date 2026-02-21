@@ -1,10 +1,10 @@
 import { AddressValidator } from './base';
-import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { decodeBase58 } from '../utils/base58';
 import { sha256 } from '../utils/sha256';
 
 export class DogecoinValidator extends AddressValidator {
-    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+    protected validateImplementation(address: string): ValidationResult {
         // Dogecoin P2PKH starts with D, P2SH starts with 9 or A
         if (!address.startsWith('D') && !address.startsWith('9') && !address.startsWith('A')) {
             return { valid: false, error: 'Unknown format', details: { errorCode: ValidationError.INVALID_FORMAT } };

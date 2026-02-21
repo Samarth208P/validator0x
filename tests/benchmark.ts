@@ -5,7 +5,6 @@ console.log('Running Benchmarks...');
 const iterations = 10000;
 const ethAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 const btcAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
-const solAddress = 'HN7cABqLq46Es1jh92dQQ04W2n5BW504b2b123123123'; // Synthetically valid characters structure
 // Using a simpler Sol addr for speed valid check if needed, or just repeat check.
 
 function benchmark(name: string, fn: () => void) {

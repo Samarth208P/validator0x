@@ -8,11 +8,12 @@ import { CardanoValidator } from './validators/cardano';
 import { RippleValidator } from './validators/ripple';
 import { BscValidator, AvalancheValidator, ArbitrumValidator, OptimismValidator, BaseValidator } from './validators/evm';
 
+import { AddressValidator } from './validators/base';
 import { detectBlockchain } from './detectors/chain-detector';
 import { shortenAddress, normalizeAddress, addChecksum } from './formatters/index';
 import { BlockchainType, ValidationResult, ValidationOptions, FormatOptions, ValidationError } from './types';
 
-const validators: Record<BlockchainType, any> = {
+const validators: Record<BlockchainType, AddressValidator> = {
     ethereum: new EthereumValidator(),
     solana: new SolanaValidator(),
     bitcoin: new BitcoinValidator(),

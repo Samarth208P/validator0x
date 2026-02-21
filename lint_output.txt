@@ -1,0 +1,6 @@
+
+C:\PC\Codes\validator0x\src\validators\base.ts
+  10:38  error  '_options' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 1 problem (1 error, 0 warnings)
+

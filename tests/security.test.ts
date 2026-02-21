@@ -1,5 +1,6 @@
 import { InputSanitizer } from '../src/security/sanitizer';
 import { ValidationError } from '../src/types';
+import { validateAddress } from '../src';
 
 describe('Input Sanitizer', () => {
     test('should pass valid strings', () => {
@@ -32,7 +33,13 @@ describe('Input Sanitizer', () => {
     });
 
     test('validateAddress handles unsafe input', () => {
-        const { validateAddress } = require('../src/index');
+        const invalid = 'test\x00String';
+        const result = validateAddress(invalid, 'ethereum');
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Unsafe input detected');
+    });
+
+    test('sanitizes input before validation', () => {
         const invalid = 'test\x00String';
         const result = validateAddress(invalid, 'ethereum');
         expect(result.valid).toBe(false);
