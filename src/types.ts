@@ -1,4 +1,4 @@
-export type BlockchainType = 'ethereum' | 'solana' | 'bitcoin' | 'polygon';
+export type BlockchainType = 'ethereum' | 'solana' | 'bitcoin' | 'polygon' | 'litecoin' | 'dogecoin' | 'cardano' | 'ripple' | 'bsc' | 'avalanche' | 'arbitrum' | 'optimism' | 'base';
 
 export interface ValidationResult {
     valid: boolean;

@@ -38,5 +38,25 @@ describe('Solana Validator', () => {
             expect(result.valid).toBe(false);
             expect(result.details?.errorCode).toBe(ValidationError.INVALID_FORMAT);
         });
+
+        test('should reject invalid decoded length', () => {
+            // 33 leaders (1s) make the decoded length 33, which is !== 32
+            const result = validateAddress(
+                '111111111111111111111111111111111',
+                'solana'
+            );
+            expect(result.valid).toBe(false);
+            expect(result.details?.errorCode).toBe(ValidationError.INVALID_LENGTH);
+        });
+    });
+});
+
+describe('Formatting', () => {
+    test('formats address correctly', () => {
+        const { SolanaValidator } = require('../src/validators/solana');
+        const validator = new SolanaValidator();
+        const addr = 'HN7cABqLq46Es1jh92dQQy4aWDtG751BHhP1K2HWT7k1';
+        expect(validator.format(addr)).toBe(addr);
+        expect(validator.format(addr, { shorten: true, shortenLength: 4 })).toBe('HN7c...T7k1');
     });
 });

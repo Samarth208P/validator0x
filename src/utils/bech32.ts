@@ -45,7 +45,7 @@ export interface Decoded {
 }
 
 export function decodeBech32(str: string): Decoded | null {
-    if (str.length < 8 || str.length > 90) return null;
+    if (str.length < 8 || str.length > 1024) return null;
     const lower = str.toLowerCase();
 
     // Mixed case check

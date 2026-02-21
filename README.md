@@ -1,10 +1,11 @@
 # validator0x
 
-A production-ready, zero-dependency wallet address validator and formatter for **Ethereum**, **Solana**, **Bitcoin**, and **Polygon**.
+A production-ready, zero-dependency wallet address validator and formatter for **Ethereum**, **EVM-compatible chains**, **Solana**, **Bitcoin**, **Cardano**, **Ripple**, **Litecoin**, **Dogecoin**, and more.
 
 ## Features
 
-- **Multi-Chain Support**: Validates addresses for Ethereum (EIP-55), Solana (Base58), Bitcoin (Legacy, SegWit, Taproot), and Polygon.
+- **Multi-Chain Support**: Validates addresses for Ethereum (EIP-55), EVM Chains (BSC, Avalanche, Arbitrum, Optimism, Base, Polygon), Solana (Base58), Bitcoin (Legacy, SegWit, Taproot), Litecoin, Dogecoin, Cardano, and Ripple.
+- **Batch Validation**: Validate multiple addresses in a single call for better performance.
 - **Zero Dependencies**: Lightweight and secure. All cryptographic primitives (Keccak-256, Base58, Bech32) are implemented internally.
 - **Security Focused**: 
   - Input sanitization against control characters and length attacks.
@@ -21,7 +22,7 @@ npm install validator0x
 ## Usage
 
 ```typescript
-import { validateAddress, formatAddress, detectBlockchain } from 'validator0x';
+import { validateAddress, validateBatch, formatAddress, detectBlockchain } from 'validator0x';
 
 // 1. Validation
 const result = validateAddress('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', 'ethereum');
@@ -41,17 +42,27 @@ console.log(formatted); // "0xd8dA...6045"
 // 3. Auto-Detection
 const chain = detectBlockchain('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
 console.log(chain); // "bitcoin"
+
+// 4. Batch Validation
+const batchResults = validateBatch([
+  '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+  'invalid_address'
+], 'ethereum');
+console.log(batchResults.map(r => r.valid)); // [true, false]
 ```
 
 ## Supported Chains
 
-- **Ethereum**: 0x-prefixed, 40-char hex. Supports EIP-55.
+- **Ethereum & EVM Chains**: (Polygon, BSC, Avalanche, Arbitrum, Optimism, Base). 0x-prefixed, 40-char hex. Supports EIP-55.
 - **Solana**: Base58 encoded, 32-44 chars.
 - **Bitcoin**: 
   - Legacy (P2PKH): Starts with `1`.
   - SegWit (P2WPKH): Starts with `bc1q`.
   - Taproot (P2TR): Starts with `bc1p`.
-- **Polygon**: Same as Ethereum validation rules.
+- **Litecoin**: Starts with `L`, `M`, or `ltc1`.
+- **Dogecoin**: Starts with `D`.
+- **Cardano**: Starts with `addr1` or `Ae2`.
+- **Ripple (XRP)**: Starts with `r`.
 
 ## Development
 
@@ -65,12 +76,12 @@ npm run build
 
 | Category | Statements | Branches | Functions | Lines |
 | :--- | :--- | :--- | :--- | :--- |
-| **All Files** | **88.01%** | **77.23%** | **96.55%** | **89.21%** |
+| **All Files** | **91.53%** | **84.64%** | **97.87%** | **92.30%** |
 | Detectors | 100% | 100% | 100% | 100% |
 | Formatters | 100% | 100% | 100% | 100% |
 | Security | 100% | 100% | 100% | 100% |
-| Utils | 94.26% | 80.55% | 100% | 98.03% |
-| Validators | 78.46% | 65.57% | 92.30% | 78.90% |
+| Utils | 95.08% | 83.33% | 100% | 98.03% |
+| Validators | 88.67% | 80.13% | 96.77% | 89.06% |
 
 ## Contributing
 

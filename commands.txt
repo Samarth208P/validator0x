@@ -1,0 +1,31 @@
+# Testing and Coverage Commands for validator0x
+
+## Standard Testing
+Run the entire test suite once:
+```bash
+npm test
+```
+
+Run tests in watch mode (useful during active development, only runs tests for changed files):
+```bash
+npm run test:watch
+```
+
+Run a specific test file:
+```bash
+npx jest tests/cardano.test.ts
+```
+
+Run a specific test case within a file (e.g., matching a description):
+```bash
+npx jest -t "should validate valid Solana address"
+```
+
+## Coverage Reports
+Run the test suite and generate a detailed code coverage report:
+```bash
+npm run test:coverage
+```
+This command will output a table in your terminal showing coverage for Statements, Branches, Functions, and Lines. 
+
+**Note on viewing reports:** When you run the coverage command, Jest generates a `coverage/` directory (if configured, or outputs directly). You can often view an interactive HTML report by opening `coverage/lcov-report/index.html` in your browser.

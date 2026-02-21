@@ -30,4 +30,12 @@ describe('Input Sanitizer', () => {
         const invalid = 'test\x00String';
         expect(() => InputSanitizer.sanitize(invalid)).toThrow(ValidationError.UNSAFE_INPUT);
     });
+
+    test('validateAddress handles unsafe input', () => {
+        const { validateAddress } = require('../src/index');
+        const invalid = 'test\x00String';
+        const result = validateAddress(invalid, 'ethereum');
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Unsafe input detected');
+    });
 });

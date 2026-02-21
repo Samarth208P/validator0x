@@ -1,13 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
-const readmePath = path.join(__dirname, '..', 'README.md');
-if (!fs.existsSync(readmePath)) {
+const readmePath = join(__dirname, '..', 'README.md');
+if (!existsSync(readmePath)) {
     console.error('README.md not found');
     process.exit(1);
 }
 
-let readme = fs.readFileSync(readmePath, 'utf8');
+let readme = readFileSync(readmePath, 'utf8');
 
 // Sections to remove for the professional npm registry view
 const sectionsToRemove = ['Development', 'Contributing'];
@@ -22,5 +22,5 @@ sectionsToRemove.forEach(section => {
 // Clean up extra newlines
 readme = readme.replace(/\n{3,}/g, '\n\n').trim();
 
-fs.writeFileSync(readmePath, readme + '\n');
+writeFileSync(readmePath, readme + '\n');
 console.log('README.md optimized for npm registry.');
