@@ -6,7 +6,7 @@ Validation checks address encoding, payload structure, and checksums where the f
 
 ## Install and use
 
-This branch documents the upcoming **0.3.0** release. Until it is published, the registry's `latest` version may differ. For a local preview, install the prepared `validator0x-0.3.0.tgz` archive. See [migration notes](./CHANGELOG.md) before upgrading from 0.2.x.
+**0.3.0 is published on npm.** Use `npm install validator0x@0.3.0` to pin this release, or install `validator0x` for the latest version. See [migration notes](./CHANGELOG.md) before upgrading from 0.2.x.
 
 ```sh
 npm install validator0x

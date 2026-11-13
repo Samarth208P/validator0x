@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 - Unreleased
+## 0.3.0 - 2026-11-13
 
 ### Added
 
@@ -31,4 +31,4 @@
 - Supported Node.js baseline is 22; browsers/workers need ES2020, BigInt, and TextEncoder. Development tools require Node 22.13+ (or 24+).
 - Tests now run with Vitest. Coverage is generated in `.coverage/` and includes crypto and the public API. Generated legacy coverage is not used as evidence of current coverage.
 
-This version is prepared locally; publication is a separate release action.
+Published to the public npm registry with the `latest` tag. Registry integrity matched the approved archive; a fresh registry install passed the CommonJS/ESM entrypoints and agent-instruction discovery checks.
