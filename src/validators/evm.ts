@@ -1,5 +1,5 @@
 import { EthereumValidator } from './ethereum';
-import { ValidationResult, ValidationOptions } from '../types';
+import { ValidationResult, ValidationOptions, EvmChain } from '../types';
 
 export class BscValidator extends EthereumValidator {
     protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
@@ -47,6 +47,16 @@ export class BaseValidator extends EthereumValidator {
         if (result.valid) {
             result.blockchain = 'base';
         }
+        return result;
+    }
+}
+
+/** Use `evm` for any chain that uses standard Ethereum/EIP-55 account addresses. */
+export class EvmValidator extends EthereumValidator {
+    constructor(private readonly chain: EvmChain = 'evm') { super(); }
+    protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
+        const result = super.validateImplementation(address, options);
+        if (result.valid) result.blockchain = this.chain;
         return result;
     }
 }

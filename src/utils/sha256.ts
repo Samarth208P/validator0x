@@ -16,8 +16,7 @@ export function sha256(input: Uint8Array): Uint8Array {
     const lenByte = input.length;
 
     // Padding
-    const k = (len + 1 + 64) % 512 <= 448 ? 448 - (len + 1) % 512 : 960 - (len + 1) % 512;
-    const padding = new Uint8Array((k + 1 + 64) / 8);
+    const padding = new Uint8Array(64 - ((lenByte + 8) % 64) + 8);
     padding[0] = 0x80;
 
     // Length in bits (Big Endian 64 bit)

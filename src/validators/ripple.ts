@@ -1,5 +1,5 @@
 import { AddressValidator } from './base';
-import { ValidationResult, FormatOptions, ValidationError } from '../types';
+import { ValidationResult, ValidationError } from '../types';
 import { sha256 } from '../utils/sha256';
 
 // Ripple uses a custom Base58 dictionary
@@ -72,7 +72,7 @@ export class RippleValidator extends AddressValidator {
 
         try {
             const decoded = decodeRippleBase58(address);
-            if (decoded.length !== 25) {
+            if (decoded.length !== 25 || decoded[0] !== 0) {
                 return { valid: false, error: 'Invalid decoded length', details: { errorCode: ValidationError.INVALID_LENGTH } };
             }
 
@@ -92,11 +92,4 @@ export class RippleValidator extends AddressValidator {
         }
     }
 
-    format(address: string, options?: FormatOptions): string {
-        if (options?.shorten) {
-            const len = options.shortenLength || 4;
-            return `${address.slice(0, len)}...${address.slice(-len)}`;
-        }
-        return address;
-    }
 }

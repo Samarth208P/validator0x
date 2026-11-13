@@ -1,4 +1,4 @@
-import { validateAddress, detectBlockchain } from '../src';
+import { validateAddress, detectBlockchain, EVM_CHAINS } from '../src';
 
 describe('Polygon Validator', () => {
     test('should validate Polygon address', () => {
@@ -10,7 +10,7 @@ describe('Polygon Validator', () => {
 
 describe('Chain Detector', () => {
     test('should detect Ethereum and EVM chains', () => {
-        expect(detectBlockchain('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')).toEqual(['ethereum', 'polygon', 'bsc', 'avalanche', 'arbitrum', 'optimism', 'base']);
+        expect(detectBlockchain('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')).toEqual(EVM_CHAINS);
     });
 
     test('should detect Solana', () => {
@@ -30,7 +30,7 @@ describe('Chain Detector', () => {
     });
 
     test('should detect Cardano', () => {
-        expect(detectBlockchain('Ae2tdPwUPEZGvXJ3ebp4LDgBhbxekAH2kqx8Q4Y5aWq9kL2y5X3v7D2GzU5')).toBe('cardano');
+        expect(detectBlockchain('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8')).toBe('cardano');
     });
 
     test('should detect Litecoin', () => {

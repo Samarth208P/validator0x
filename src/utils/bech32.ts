@@ -44,8 +44,8 @@ export interface Decoded {
     encoding: Bech32Encoding;
 }
 
-export function decodeBech32(str: string): Decoded | null {
-    if (str.length < 8 || str.length > 1024) return null;
+export function decodeBech32(str: string, limit = 90): Decoded | null {
+    if (str.length < 8 || str.length > limit) return null;
     const lower = str.toLowerCase();
 
     // Mixed case check
@@ -55,6 +55,7 @@ export function decodeBech32(str: string): Decoded | null {
     if (pos < 1 || pos + 7 > lower.length) return null;
 
     const hrp = lower.substring(0, pos);
+    if (/[^\x21-\x7E]/.test(hrp)) return null;
 
     const data: number[] = [];
     for (let i = pos + 1; i < lower.length; i++) {
@@ -74,4 +75,22 @@ export function decodeBech32(str: string): Decoded | null {
     }
 
     return null;
+}
+
+/** Convert Bech32 words to bytes, rejecting excess or nonzero padding (BIP-173). */
+export function wordsToBytes(words: readonly number[]): Uint8Array | null {
+    let acc = 0;
+    let bits = 0;
+    const bytes: number[] = [];
+    for (const word of words) {
+        if (!Number.isInteger(word) || word < 0 || word > 31) return null;
+        acc = ((acc << 5) | word) & 0xffff;
+        bits += 5;
+        if (bits >= 8) {
+            bits -= 8;
+            bytes.push((acc >>> bits) & 255);
+        }
+    }
+    if (bits >= 5 || ((acc << (8 - bits)) & 255) !== 0) return null;
+    return Uint8Array.from(bytes);
 }

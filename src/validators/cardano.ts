@@ -1,60 +1,56 @@
-import { AddressValidator } from './base';
+import { AddressValidator, formatPlainAddress } from './base';
 import { ValidationResult, FormatOptions, ValidationError } from '../types';
 import { decodeBase58 } from '../utils/base58';
-import { decodeBech32 } from '../utils/bech32';
+import { decodeBech32, Bech32Encoding, wordsToBytes } from '../utils/bech32';
+import { byronNetwork } from '../utils/byron';
 
 export class CardanoValidator extends AddressValidator {
     protected validateImplementation(address: string): ValidationResult {
-        // 1. Check Shelley Era (Bech32 started with addr1 or addr_test1)
-        if (address.startsWith('addr1') || address.startsWith('addr_test1') || address.startsWith('stake1') || address.startsWith('stake_test1')) {
-            return this.validateShelley(address);
-        }
-
-        // 2. Check Byron Era (Base58, usually starts with A, D, or Ae2)
-        if (address.startsWith('A') || address.startsWith('D') || address.startsWith('Ae2')) {
-            return this.validateByron(address);
-        }
-
-        return { valid: false, error: 'Unknown Cardano format', details: { errorCode: ValidationError.INVALID_FORMAT } };
+        if (/^(addr|stake)(_test)?1/i.test(address)) return this.validateShelley(address);
+        try {
+            const network = byronNetwork(decodeBase58(address));
+            if (network) return { valid: true, blockchain: 'cardano', details: { format: 'byron', network, checksum: true } };
+        } catch { /* Invalid Base58 is reported with other malformed addresses. */ }
+        return this.invalid();
     }
 
     private validateShelley(address: string): ValidationResult {
-        const decoded = decodeBech32(address);
-        if (!decoded) {
-            return { valid: false, error: 'Invalid Bech32 encoding', details: { errorCode: ValidationError.INVALID_FORMAT } };
-        }
-
-        const validHrps = ['addr', 'addr_test', 'stake', 'stake_test'];
-        if (!validHrps.includes(decoded.hrp)) {
-            return { valid: false, error: 'Invalid HRP for Cardano', details: { errorCode: ValidationError.UNSUPPORTED_CHAIN } };
-        }
-
-        const network = decoded.hrp.includes('test') ? 'testnet' : 'mainnet';
-
-        return { valid: true, blockchain: 'cardano', details: { format: 'shelley', network } };
+        const decoded = decodeBech32(address, 256);
+        const bytes = decoded && wordsToBytes(decoded.data);
+        if (!decoded || decoded.encoding !== Bech32Encoding.BECH32 || !bytes?.length) return this.invalid();
+        const type = bytes[0] >>> 4;
+        const tag = bytes[0] & 15;
+        if (tag !== 0 && tag !== 1) return this.invalid();
+        const stake = type === 14 || type === 15;
+        const hrp = (stake ? 'stake' : 'addr') + (tag === 0 ? '_test' : '');
+        if (decoded.hrp !== hrp) return this.invalid();
+        let valid = false;
+        if (type <= 3) valid = bytes.length === 57;
+        else if (type === 6 || type === 7 || stake) valid = bytes.length === 29;
+        else if (type === 4 || type === 5) valid = this.validPointer(bytes);
+        if (!valid) return this.invalid();
+        return { valid: true, blockchain: 'cardano', details: { format: stake ? 'stake' : 'shelley', network: tag === 1 ? 'mainnet' : 'testnet', checksum: true } };
     }
 
-    private validateByron(address: string): ValidationResult {
-        try {
-            // Byron addresses use standard Base58 but have a complex CBOR structure.
-            // A comprehensive check requires a CBOR parser. 
-            // For a lightweight zero-dependency lib, we do a basic Base58 decode + length check.
-            const decoded = decodeBase58(address);
-            if (decoded.length < 32 || decoded.length > 128) {
-                return { valid: false, error: 'Invalid Byron address length', details: { errorCode: ValidationError.INVALID_LENGTH } };
-            }
-
-            return { valid: true, blockchain: 'cardano', details: { format: 'byron' } };
-        } catch {
-            return { valid: false, error: 'Invalid Base58', details: { errorCode: ValidationError.INVALID_CHARACTERS } };
+    private validPointer(bytes: Uint8Array): boolean {
+        let offset = 29;
+        for (let field = 0; field < 3; field++) {
+            let value = 0n;
+            const start = offset;
+            do {
+                if (offset >= bytes.length || offset - start >= 10) return false;
+                value = (value << 7n) | BigInt(bytes[offset] & 127);
+            } while ((bytes[offset++] & 128) !== 0);
+            if ((offset - start > 1 && bytes[start] === 128) || value > 0xffffffffffffffffn) return false;
         }
+        return offset === bytes.length;
+    }
+
+    private invalid(): ValidationResult {
+        return { valid: false, error: 'Invalid Cardano address structure, network, or checksum', details: { errorCode: ValidationError.INVALID_FORMAT } };
     }
 
     format(address: string, options?: FormatOptions): string {
-        if (options?.shorten) {
-            const len = options.shortenLength || 8; // Cardano addresses are long, show 8 chars
-            return `${address.slice(0, len)}...${address.slice(-len)}`;
-        }
-        return address;
+        return formatPlainAddress(address, options, 8);
     }
 }

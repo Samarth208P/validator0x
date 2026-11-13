@@ -1,14 +1,15 @@
 {
   "name": "validator0x",
-  "version": "0.2.0",
-  "description": "Multi-chain wallet address validator and formatter for Ethereum, Solana, Bitcoin, Polygon, Litecoin, Dogecoin, Cardano, Ripple, and more. Supports batch validation and zero dependencies.",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/index.umd.js",
-  "types": "dist/index.d.ts",
+  "version": "0.3.0",
+  "description": "Lightweight, zero-dependency wallet address validation for EVM, Bitcoin, Solana, TRON, Cosmos, Cardano, Sui, Aptos, NEAR and more.",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "files": [
     "dist",
     "README.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "repository": {
@@ -16,13 +17,19 @@
     "url": "git+https://github.com/Samarth208P/validator0x.git"
   },
   "scripts": {
-    "build": "rimraf dist && rollup -c rollup.config.mjs && tsc --emitDeclarationOnly",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "lint": "eslint src tests --ext .ts",
-    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
-    "benchmark": "ts-node --project tsconfig.benchmark.json tests/benchmark.ts",
-    "prepublishOnly": "npm run lint && npm test && npm run build"
+    "build": "node scripts/clean.mjs && rollup -c && node scripts/declarations.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:package": "node scripts/test-package.mjs",
+    "test:differential": "node scripts/test-differential.mjs",
+    "lint": "eslint src tests --max-warnings 0",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "benchmark": "node scripts/benchmark.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run test:differential && npm run test:package",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run check",
+    "prepare:release": "npm run check && npm run test:coverage && npm audit && npm pack --ignore-scripts"
   },
   "keywords": [
     "blockchain",
@@ -42,25 +49,233 @@
     "crypto",
     "batch-validation",
     "checksum",
-    "validator0x"
+    "validator0x",
+    "tron",
+    "cosmos",
+    "sui",
+    "aptos",
+    "near",
+    "osmosis",
+    "celestia"
   ],
   "author": "Samarth Patel",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/plugin-typescript": "^11.0.0",
-    "@types/jest": "^29.0.0",
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "jest": "^29.0.0",
-    "prettier": "^3.0.0",
-    "rimraf": "^5.0.0",
-    "rollup": "^4.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "ts-jest": "^29.0.0",
-    "ts-node": "^10.0.0",
+    "@rollup/plugin-typescript": "^12.3.1",
+    "@types/node": "^22.0.0",
+    "eslint": "^10.14.0",
+    "prettier": "^3.10.1",
+    "rollup": "^4.68.3",
     "tslib": "^2.8.1",
-    "typescript": "5.3.3"
+    "typescript": "5.9.3",
+    "@rollup/plugin-terser": "^1.0.2",
+    "rollup-plugin-dts": "^6.5.1",
+    "typescript-eslint": "^8.72.2",
+    "@eslint/js": "^10.0.1",
+    "@noble/hashes": "^2.4.0",
+    "@scure/base": "^2.4.0",
+    "vitest": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.0"
+  },
+  "unpkg": "./dist/index.umd.js",
+  "jsdelivr": "./dist/index.umd.js",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./ethereum": {
+      "import": {
+        "types": "./dist/ethereum.d.mts",
+        "default": "./dist/ethereum.mjs"
+      },
+      "require": {
+        "types": "./dist/ethereum.d.cts",
+        "default": "./dist/ethereum.cjs"
+      }
+    },
+    "./evm": {
+      "import": {
+        "types": "./dist/evm.d.mts",
+        "default": "./dist/evm.mjs"
+      },
+      "require": {
+        "types": "./dist/evm.d.cts",
+        "default": "./dist/evm.cjs"
+      }
+    },
+    "./bitcoin": {
+      "import": {
+        "types": "./dist/bitcoin.d.mts",
+        "default": "./dist/bitcoin.mjs"
+      },
+      "require": {
+        "types": "./dist/bitcoin.d.cts",
+        "default": "./dist/bitcoin.cjs"
+      }
+    },
+    "./litecoin": {
+      "import": {
+        "types": "./dist/litecoin.d.mts",
+        "default": "./dist/litecoin.mjs"
+      },
+      "require": {
+        "types": "./dist/litecoin.d.cts",
+        "default": "./dist/litecoin.cjs"
+      }
+    },
+    "./dogecoin": {
+      "import": {
+        "types": "./dist/dogecoin.d.mts",
+        "default": "./dist/dogecoin.mjs"
+      },
+      "require": {
+        "types": "./dist/dogecoin.d.cts",
+        "default": "./dist/dogecoin.cjs"
+      }
+    },
+    "./solana": {
+      "import": {
+        "types": "./dist/solana.d.mts",
+        "default": "./dist/solana.mjs"
+      },
+      "require": {
+        "types": "./dist/solana.d.cts",
+        "default": "./dist/solana.cjs"
+      }
+    },
+    "./ripple": {
+      "import": {
+        "types": "./dist/ripple.d.mts",
+        "default": "./dist/ripple.mjs"
+      },
+      "require": {
+        "types": "./dist/ripple.d.cts",
+        "default": "./dist/ripple.cjs"
+      }
+    },
+    "./cardano": {
+      "import": {
+        "types": "./dist/cardano.d.mts",
+        "default": "./dist/cardano.mjs"
+      },
+      "require": {
+        "types": "./dist/cardano.d.cts",
+        "default": "./dist/cardano.cjs"
+      }
+    },
+    "./tron": {
+      "import": {
+        "types": "./dist/tron.d.mts",
+        "default": "./dist/tron.mjs"
+      },
+      "require": {
+        "types": "./dist/tron.d.cts",
+        "default": "./dist/tron.cjs"
+      }
+    },
+    "./cosmos": {
+      "import": {
+        "types": "./dist/cosmos.d.mts",
+        "default": "./dist/cosmos.mjs"
+      },
+      "require": {
+        "types": "./dist/cosmos.d.cts",
+        "default": "./dist/cosmos.cjs"
+      }
+    },
+    "./move": {
+      "import": {
+        "types": "./dist/move.d.mts",
+        "default": "./dist/move.mjs"
+      },
+      "require": {
+        "types": "./dist/move.d.cts",
+        "default": "./dist/move.cjs"
+      }
+    },
+    "./near": {
+      "import": {
+        "types": "./dist/near.d.mts",
+        "default": "./dist/near.mjs"
+      },
+      "require": {
+        "types": "./dist/near.d.cts",
+        "default": "./dist/near.cjs"
+      }
+    },
+    "./formatters": {
+      "import": {
+        "types": "./dist/formatters.d.mts",
+        "default": "./dist/formatters.mjs"
+      },
+      "require": {
+        "types": "./dist/formatters.d.cts",
+        "default": "./dist/formatters.cjs"
+      }
+    },
+    "./package.json": "./package.json",
+    "./AGENTS.md": "./AGENTS.md"
+  },
+  "typesVersions": {
+    "*": {
+      "ethereum": [
+        "./dist/ethereum.d.cts"
+      ],
+      "evm": [
+        "./dist/evm.d.cts"
+      ],
+      "bitcoin": [
+        "./dist/bitcoin.d.cts"
+      ],
+      "litecoin": [
+        "./dist/litecoin.d.cts"
+      ],
+      "dogecoin": [
+        "./dist/dogecoin.d.cts"
+      ],
+      "solana": [
+        "./dist/solana.d.cts"
+      ],
+      "ripple": [
+        "./dist/ripple.d.cts"
+      ],
+      "cardano": [
+        "./dist/cardano.d.cts"
+      ],
+      "tron": [
+        "./dist/tron.d.cts"
+      ],
+      "cosmos": [
+        "./dist/cosmos.d.cts"
+      ],
+      "move": [
+        "./dist/move.d.cts"
+      ],
+      "near": [
+        "./dist/near.d.cts"
+      ],
+      "formatters": [
+        "./dist/formatters.d.cts"
+      ]
+    }
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "tag": "latest"
   }
 }

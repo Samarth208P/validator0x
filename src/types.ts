@@ -1,4 +1,12 @@
-export type BlockchainType = 'ethereum' | 'solana' | 'bitcoin' | 'polygon' | 'litecoin' | 'dogecoin' | 'cardano' | 'ripple' | 'bsc' | 'avalanche' | 'arbitrum' | 'optimism' | 'base';
+export const EVM_CHAINS = Object.freeze([
+    'ethereum', 'polygon', 'bsc', 'avalanche', 'arbitrum', 'optimism', 'base',
+    'evm', 'fantom', 'sonic', 'gnosis', 'celo', 'cronos', 'moonbeam', 'moonriver',
+    'zksync', 'linea', 'scroll', 'mantle', 'blast', 'opbnb', 'zora', 'worldchain',
+] as const);
+export type EvmChain = typeof EVM_CHAINS[number];
+export const COSMOS_CHAINS = Object.freeze(['cosmos', 'osmosis', 'celestia', 'injective', 'sei'] as const);
+export type CosmosChain = typeof COSMOS_CHAINS[number];
+export type BlockchainType = EvmChain | CosmosChain | 'solana' | 'bitcoin' | 'litecoin' | 'dogecoin' | 'cardano' | 'ripple' | 'tron' | 'sui' | 'aptos' | 'near';
 
 export interface ValidationResult {
     valid: boolean;
@@ -13,9 +21,10 @@ export interface ValidationResult {
 }
 
 export interface ValidationOptions {
-    strict?: boolean;          // Enforce checksum validation
+    strict?: boolean;          // Require exact EIP-55 case for EVM; canonical AIP-40 for Aptos
     network?: 'mainnet' | 'testnet' | 'auto';
     allowTestnet?: boolean;
+    allowBurnAddress?: boolean; // Permit the EVM zero address (rejected by default)
 }
 
 export interface FormatOptions {
@@ -31,10 +40,6 @@ export enum ValidationError {
     INVALID_CHARACTERS = 'INVALID_CHARACTERS',
     UNSUPPORTED_CHAIN = 'UNSUPPORTED_CHAIN',
     BURN_ADDRESS = 'BURN_ADDRESS',
-    UNSAFE_INPUT = 'UNSAFE_INPUT'
-}
-
-export abstract class AddressValidator {
-    abstract validate(address: string, options?: ValidationOptions): ValidationResult;
-    abstract format(address: string, options?: FormatOptions): string;
+    UNSAFE_INPUT = 'UNSAFE_INPUT',
+    NETWORK_MISMATCH = 'NETWORK_MISMATCH'
 }
