@@ -40,6 +40,42 @@ for (let seed = 0; seed < 100; seed++) {
     equal(validateAddress(checksum, 'ethereum', { strict: true }).valid, true, 'EIP-55 strict');
 }
 
+// EVM results against a direct reading of EIP-55. `details.checksum` reports whether the input
+// equals its EIP-55 form; mixed case or strict mode additionally requires it. Mutations keep
+// the length so they reach the checksum path (embedded or repeated prefixes, case flips, non-hex).
+function eip55(hex) {
+    const lower = hex.toLowerCase();
+    const hash = Buffer.from(keccak_256(new TextEncoder().encode(lower))).toString('hex');
+    return [...lower].map((c, i) => parseInt(hash[i], 16) >= 8 ? c.toUpperCase() : c).join('');
+}
+function referenceEvm(input, strict) {
+    const hex = input.startsWith('0x') ? input.slice(2) : input;
+    if (!/^[0-9a-fA-F]{40}$/.test(hex) || /^0+$/.test(hex)) return { valid: false };
+    const checksum = hex === eip55(hex);
+    const mixed = hex !== hex.toLowerCase() && hex !== hex.toUpperCase();
+    return (strict || mixed) && !checksum ? { valid: false } : { valid: true, checksum };
+}
+const evmSeeds = ['0x' + '1'.repeat(40), '0xde709f2102306220921060314715629080e2fb77', '0x52908400098527886E0F7030069857D2E4169EE7'];
+for (let seed = 0; seed < 40; seed++) {
+    const hex = Buffer.from(bytes(20, seed)).toString('hex');
+    evmSeeds.push('0x' + eip55(hex), '0x' + hex, '0x' + hex.toUpperCase(), eip55(hex));
+}
+for (const seed of evmSeeds) {
+    const variants = new Set([seed]);
+    for (let i = 0; i + 2 <= seed.length; i++) {
+        for (const piece of ['0x', '0X', 'x0', 'zz']) variants.add(seed.slice(0, i) + piece + seed.slice(i + 2));
+        const c = seed[i];
+        variants.add(seed.slice(0, i) + (c === c.toLowerCase() ? c.toUpperCase() : c.toLowerCase()) + seed.slice(i + 1));
+    }
+    for (const input of variants) {
+        for (const strict of [false, true]) {
+            const expected = referenceEvm(input, strict);
+            const actual = validateAddress(input, 'ethereum', { strict });
+            equal(actual.valid ? { valid: true, checksum: actual.details?.checksum } : { valid: false }, expected, `EVM reference ${input} strict=${strict}`);
+        }
+    }
+}
+
 for (const [chain, hrp] of [['bitcoin', 'bc'], ['bitcoin', 'tb'], ['litecoin', 'ltc'], ['litecoin', 'tltc']]) {
     for (let version = 0; version <= 17; version++) {
         for (let length = 0; length <= 41; length++) {

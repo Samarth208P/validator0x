@@ -103,3 +103,22 @@ describe('Ethereum Validator', () => {
         });
     });
 });
+
+describe('EIP-55 results for uniform-case vectors', () => {
+    // EIP-55 vectors whose checksummed form is entirely lowercase or uppercase letters.
+    const lowerVector = '0xde709f2102306220921060314715629080e2fb77';
+    const upperVector = '0x52908400098527886E0F7030069857D2E4169EE7';
+
+    test.each([lowerVector, upperVector])('%s reports a valid checksum with and without strict mode', address => {
+        for (const options of [undefined, { strict: true }]) {
+            expect(validateAddress(address, 'ethereum', options)).toEqual({ valid: true, blockchain: 'ethereum', details: { checksum: true } });
+        }
+    });
+
+    test('the opposite case of each vector is valid but unchecksummed, and fails strict mode', () => {
+        for (const address of ['0x' + lowerVector.slice(2).toUpperCase(), '0x' + upperVector.slice(2).toLowerCase()]) {
+            expect(validateAddress(address, 'ethereum')).toEqual({ valid: true, blockchain: 'ethereum', details: { checksum: false } });
+            expect(validateAddress(address, 'ethereum', { strict: true }).details?.errorCode).toBe(ValidationError.INVALID_CHECKSUM);
+        }
+    });
+});

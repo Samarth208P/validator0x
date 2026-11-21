@@ -59,6 +59,9 @@ export class EthereumValidator extends AddressValidator {
         const clean = stripHexPrefix(address).toLowerCase();
         if (!/^[0-9a-f]{40}$/.test(clean)) throw new Error('Expected a 20-byte hexadecimal address');
         const hash = keccak256(clean);
-        return '0x' + [...clean].map((char, i) => parseInt(hash[i], 16) >= 8 ? char.toUpperCase() : char).join('');
+        let result = '0x';
+        // A hash nibble of 8-f (char code >= '8') marks a letter that must be uppercase.
+        for (let i = 0; i < 40; i++) result += hash.charCodeAt(i) >= 56 ? clean[i].toUpperCase() : clean[i];
+        return result;
     }
 }

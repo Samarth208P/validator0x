@@ -1,3 +1,4 @@
+import { keccak_256 } from '@noble/hashes/sha3.js';
 import { encodeBase58, decodeBase58 } from '../src/utils/base58';
 import { isHex, stripHexPrefix, addHexPrefix } from '../src/utils/hex';
 import { decodeBech32 } from '../src/utils/bech32';
@@ -67,3 +68,17 @@ describe('Utils', () => {
     });
 });
 
+describe('Keccak-256', () => {
+    test.each([
+        ['', 'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'],
+        ['abc', '4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45'],
+    ])('matches the published digest of %j', (input, digest) => {
+        expect(keccak256(input)).toBe(digest);
+    });
+
+    // 135, 136 and 137 bytes straddle the 136-byte rate; 271-273 straddle the second block.
+    test.each([1, 40, 135, 136, 137, 271, 272, 273, 500])('matches @noble/hashes for %i-byte input', length => {
+        const input = 'x'.repeat(length);
+        expect(keccak256(input)).toBe(Buffer.from(keccak_256(new TextEncoder().encode(input))).toString('hex'));
+    });
+});
