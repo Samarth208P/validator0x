@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Bitcoin BIP-433 fee anchors return `details.format === 'anchor'`. Both payment examples reject them as recipients.
 - An unsupported `network` option value throws a `RangeError` from validation, batch validation, detection, and validator `validate` methods, before any input is read. Previously it reported `NETWORK_MISMATCH` for addresses that encode a network and was ignored for other chains. `undefined` and `null` still mean `auto`.
 
 ## 0.4.0

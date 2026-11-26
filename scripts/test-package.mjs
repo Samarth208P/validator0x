@@ -97,6 +97,7 @@ try {
             import { checkRecipient } from './recipient.mjs';
             const evm = 'd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
             assert.equal(checkRecipient(evm, 'base').address, '0x' + evm);
+            assert.equal(checkRecipient('bc1pfeessrawgf', 'bitcoin').ok, false);
             assert.equal(checkRecipient('stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw', 'cardano').ok, false);
             const btc = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
             assert.equal(checkRecipient(' ' + btc + ' ', 'bitcoin').address, btc);

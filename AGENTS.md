@@ -31,6 +31,9 @@ export function checkRecipient(input: unknown, chain: unknown) {
     return { ok: false as const, error: result.error ?? 'Invalid address' };
   }
   // The application must separately verify the selected asset and actual network.
+  if (chain === 'bitcoin' && result.details?.format === 'anchor') {
+    return { ok: false as const, error: 'Choose a Bitcoin payment address. Anyone can spend a fee anchor.' };
+  }
   if (chain === 'cardano' && result.details?.format === 'stake') {
     return { ok: false as const, error: 'Choose a Cardano payment address' };
   }

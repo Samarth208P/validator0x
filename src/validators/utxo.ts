@@ -40,7 +40,11 @@ export class UtxoValidator extends AddressValidator {
         }
         const expected = version === 0 ? Bech32Encoding.BECH32 : Bech32Encoding.BECH32M;
         if (decoded.encoding !== expected) return this.invalid('Wrong checksum encoding for witness version', ValidationError.INVALID_CHECKSUM);
-        const format = version === 0 ? 'segwit' : version === 1 && program.length === 32 ? 'taproot' : 'future';
+        let format = 'future';
+        if (version === 0) format = 'segwit';
+        else if (version === 1 && program.length === 32) format = 'taproot';
+        else if (this.config.chain === 'bitcoin' && version === 1 && program.length === 2 &&
+            program[0] === 0x4e && program[1] === 0x73) format = 'anchor'; // BIP-433
         return { valid: true, blockchain: this.config.chain, details: { format, network, checksum: true } };
     }
 

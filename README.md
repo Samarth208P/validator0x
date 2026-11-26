@@ -54,6 +54,9 @@ export function checkRecipient(address: unknown, chain: unknown) {
   if (!result.valid || typeof address !== 'string') {
     return { ok: false as const, error: result.error ?? 'Invalid address' };
   }
+  if (chain === 'bitcoin' && result.details?.format === 'anchor') {
+    return { ok: false as const, error: 'Choose a Bitcoin payment address. Anyone can spend a fee anchor.' };
+  }
   if (chain === 'cardano' && result.details?.format === 'stake') {
     return { ok: false as const, error: 'Choose a Cardano payment address' };
   }
@@ -127,7 +130,7 @@ The full minified ESM bundle is approximately **7.2 kB gzip**, and the Solana-on
 | --- | --- |
 | `ethereum`, `polygon`, `bsc`, `avalanche`, `arbitrum`, `optimism`, `base` | Ethereum 20-byte hexadecimal addresses; EIP-55 checksum |
 | `evm`, `fantom`, `sonic`, `gnosis`, `celo`, `cronos`, `moonbeam`, `moonriver`, `zksync`, `linea`, `scroll`, `mantle`, `blast`, `opbnb`, `zora`, `worldchain` | Same Ethereum/EIP-55 address rules |
-| `bitcoin` | Base58Check P2PKH/P2SH; SegWit v0; Bech32m v1-16, including Taproot; mainnet and testnet |
+| `bitcoin` | Base58Check P2PKH/P2SH; SegWit v0; Bech32m v1-16, including Taproot and [BIP-433 fee anchors](https://github.com/bitcoin/bips/blob/master/bip-0433.mediawiki); mainnet and testnet |
 | `litecoin` | Base58Check P2PKH/P2SH (including legacy shared P2SH prefixes); standard witness v0-16; mainnet and testnet |
 | `dogecoin` | Base58Check P2PKH/P2SH; mainnet and testnet |
 | `solana` | Base58 decoding to exactly 32 bytes, including program addresses and PDAs |
