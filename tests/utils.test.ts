@@ -1,7 +1,8 @@
 import { keccak_256 } from '@noble/hashes/sha3.js';
+import { bech32, bech32m } from '@scure/base';
 import { encodeBase58, decodeBase58 } from '../src/utils/base58';
 import { isHex, stripHexPrefix, addHexPrefix } from '../src/utils/hex';
-import { decodeBech32 } from '../src/utils/bech32';
+import { decodeBech32, wordsToBytes } from '../src/utils/bech32';
 import { keccak256 } from '../src/utils/keccak256';
 import { sha256 } from '../src/utils/sha256';
 
@@ -37,13 +38,24 @@ describe('Utils', () => {
     });
 
     describe('Bech32', () => {
-        test('should decode correctly', () => {
-            // Valid Bitcoin SegWit Address: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
-            const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-            const decoded = decodeBech32(address);
-            expect(decoded).not.toBeNull();
-            expect(decoded?.hrp).toBe('bc');
-            // Check data length or content if needed, but non-null structure check is enough for basic coverage
+        test('matches the reference byte conversion for every padding length and final word', () => {
+            for (let count = 1; count <= 8; count++) {
+                const words = Array.from({ length: count }, (_, index) => (index * 11 + 1) & 31);
+                for (let last = 0; last < 32; last++) {
+                    words[count - 1] = last;
+                    expect(wordsToBytes(words)).toEqual(bech32.fromWordsUnsafe(words) ?? null);
+                }
+            }
+            expect(wordsToBytes([])).toEqual(new Uint8Array());
+        });
+
+        test.each([
+            ['bech32', bech32, 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'],
+            ['bech32m', bech32m, 'BC1P0XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQZK5JJ0'],
+        ] as const)('decodes the %s BIP-350 vector and rejects Unicode case folding', (encoding, codec, address) => {
+            const { prefix, words } = codec.decode(address);
+            expect(decodeBech32(address)).toEqual({ hrp: prefix, data: words, encoding });
+            expect(decodeBech32(address.replace('K', '\u212a'))).toBeNull();
         });
 
         test('should return null for invalid bech32', () => {

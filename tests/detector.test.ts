@@ -1,4 +1,6 @@
 import { validateAddress, detectBlockchain, EVM_CHAINS } from '../src';
+import { base58, bech32, createBase58check } from '@scure/base';
+import { sha256 } from '@noble/hashes/sha2.js';
 
 describe('Polygon Validator', () => {
     test('should validate Polygon address', () => {
@@ -9,6 +11,30 @@ describe('Polygon Validator', () => {
 });
 
 describe('Chain Detector', () => {
+    test('retains every matching format when an Osmosis account also encodes a Solana key', () => {
+        const accountId = Buffer.from('2c624232cdd221771294dfbb310aca000a0df6ac', 'hex');
+        const address = bech32.encode('osmo', bech32.toWords(accountId));
+        expect(base58.decode(address)).toHaveLength(32);
+        expect(detectBlockchain(' ' + address + ' ')).toEqual(['osmosis', 'solana']);
+        expect(detectBlockchain(address.toUpperCase())).toBe('osmosis');
+
+        const badChecksum = address.slice(0, -1) + '7';
+        expect(base58.decode(badChecksum)).toHaveLength(32);
+        expect(detectBlockchain(badChecksum)).toBe('solana');
+    });
+
+    test('applies network policy across all chains sharing a legacy version', () => {
+        const codec = createBase58check(sha256);
+        const payload = new Uint8Array(21);
+        payload[0] = 5;
+        expect(detectBlockchain(codec.encode(payload), { network: 'mainnet' })).toEqual(['bitcoin', 'litecoin']);
+        payload[0] = 196;
+        const testnet = codec.encode(payload);
+        expect(detectBlockchain(testnet, { network: 'testnet' })).toEqual(['bitcoin', 'litecoin', 'dogecoin']);
+        expect(detectBlockchain(testnet, { network: 'mainnet' })).toBeNull();
+        expect(detectBlockchain(testnet, { allowTestnet: false })).toBeNull();
+    });
+
     test('should detect Ethereum and EVM chains', () => {
         expect(detectBlockchain('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')).toEqual(EVM_CHAINS);
     });

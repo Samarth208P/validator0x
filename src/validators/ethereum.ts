@@ -4,6 +4,17 @@ import { isHex, stripHexPrefix, addHexPrefix } from '../utils/hex';
 import { keccak256 } from '../utils/keccak256';
 import { InputSanitizer } from '../security/sanitizer';
 
+/** Apply EIP-55 capitalization to a validated, unprefixed 20-byte hex string. */
+function checksumBody(hex: string): string {
+    if (/^[0-9]+$/.test(hex)) return hex;
+    const lower = hex.toLowerCase();
+    const hash = keccak256(lower);
+    let result = '';
+    // Hex digest characters '8' through 'f' have character codes >= 56.
+    for (let i = 0; i < lower.length; i++) result += hash.charCodeAt(i) >= 56 ? lower[i].toUpperCase() : lower[i];
+    return result;
+}
+
 export class EthereumValidator extends AddressValidator {
     protected validateImplementation(address: string, options?: ValidationOptions): ValidationResult {
         const cleanAddress = stripHexPrefix(address);
@@ -14,7 +25,7 @@ export class EthereumValidator extends AddressValidator {
         }
 
         // Check hex
-        if (!isHex(cleanAddress)) {
+        if (!isHex(address)) {
             return { valid: false, error: 'Invalid hex characters', details: { errorCode: ValidationError.INVALID_CHARACTERS } };
         }
 
@@ -23,12 +34,10 @@ export class EthereumValidator extends AddressValidator {
             return { valid: false, error: 'Burn address detected', details: { errorCode: ValidationError.BURN_ADDRESS } };
         }
 
-        const checksum = this.isChecksummed(cleanAddress);
+        const checksum = cleanAddress === checksumBody(cleanAddress);
         // Mixed-case input always claims a checksum; strict mode also checks uniform case.
-        if (options?.strict || (cleanAddress !== cleanAddress.toLowerCase() && cleanAddress !== cleanAddress.toUpperCase())) {
-            if (!checksum) {
-                return { valid: false, error: 'Invalid checksum', details: { errorCode: ValidationError.INVALID_CHECKSUM } };
-            }
+        if (!checksum && (options?.strict || (cleanAddress !== cleanAddress.toLowerCase() && cleanAddress !== cleanAddress.toUpperCase()))) {
+            return { valid: false, error: 'Invalid checksum', details: { errorCode: ValidationError.INVALID_CHECKSUM } };
         }
 
         return {
@@ -41,27 +50,9 @@ export class EthereumValidator extends AddressValidator {
     }
 
     format(address: string, options?: FormatOptions): string {
-        let formatted = addHexPrefix(InputSanitizer.sanitize(address));
-
-        if (options?.checksum) {
-            formatted = this.toChecksumAddress(formatted);
-        }
-
-        return formatPlainAddress(formatted, options);
-    }
-
-    private isChecksummed(address: string): boolean {
-        const clean = stripHexPrefix(address);
-        return addHexPrefix(clean) === this.toChecksumAddress(clean);
-    }
-
-    private toChecksumAddress(address: string): string {
-        const clean = stripHexPrefix(address).toLowerCase();
-        if (!/^[0-9a-f]{40}$/.test(clean)) throw new Error('Expected a 20-byte hexadecimal address');
-        const hash = keccak256(clean);
-        let result = '0x';
-        // A hash nibble of 8-f (char code >= '8') marks a letter that must be uppercase.
-        for (let i = 0; i < 40; i++) result += hash.charCodeAt(i) >= 56 ? clean[i].toUpperCase() : clean[i];
-        return result;
+        const safe = InputSanitizer.sanitize(address);
+        if (!options?.checksum) return formatPlainAddress(addHexPrefix(safe), options);
+        if (!isHex(safe, 40)) throw new Error('Expected a 20-byte hexadecimal address');
+        return formatPlainAddress('0x' + checksumBody(stripHexPrefix(safe)), options);
     }
 }

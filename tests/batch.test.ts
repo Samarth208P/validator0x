@@ -1,4 +1,4 @@
-import { validateBatch } from '../src/index';
+import { validateAddress, validateBatch, ValidationError } from '../src/index';
 
 describe('Batch Validation', () => {
     const addresses = [
@@ -13,6 +13,40 @@ describe('Batch Validation', () => {
         const results = validateBatch(rows, 'ethereum');
         expect(results.map(result => result.valid)).toEqual([false, true, false]);
         expect(results.every(result => result.valid)).toBe(false);
+    });
+
+    it('validates every array index even if a custom iterator skips rows', () => {
+        class FilteredRows extends Array<string> {
+            override [Symbol.iterator]() {
+                return [this[1]].values();
+            }
+        }
+        const rows = Object.freeze(new FilteredRows(addresses[2], addresses[1]));
+        expect(validateBatch(rows, 'ethereum')).toEqual([
+            validateAddress(rows[0], 'ethereum'), validateAddress(rows[1], 'ethereum'),
+        ]);
+    });
+
+    it('treats an unfilled row as missing even when an array subclass supplies a default', () => {
+        class DefaultRows extends Array<string> {}
+        Object.defineProperty(DefaultRows.prototype, 0, { value: addresses[0] });
+        const results = validateBatch(new DefaultRows(1), 'ethereum');
+        expect(results[0].details?.errorCode).toBe(ValidationError.UNSAFE_INPUT);
+    });
+
+    it('preserves existing iterable behavior for JavaScript callers', () => {
+        // @ts-expect-error The public TypeScript API takes readonly arrays.
+        const results = validateBatch(new Set(addresses), 'ethereum');
+        expect(results).toEqual(addresses.map(address => validateAddress(address, 'ethereum')));
+    });
+
+    it('keeps a result for each original index when reading a row changes the array length', () => {
+        const rows = [addresses[0], addresses[1]];
+        Object.defineProperty(rows, 0, { get() { rows.length = 1; return addresses[0]; } });
+        const results = validateBatch(rows, 'ethereum');
+        expect(results).toHaveLength(2);
+        expect(results[0].valid).toBe(true);
+        expect(results[1].details?.errorCode).toBe(ValidationError.UNSAFE_INPUT);
     });
 
     it('validates a batch of addresses', () => {

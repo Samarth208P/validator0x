@@ -72,7 +72,7 @@ The validator trims outer ASCII spaces internally; use the trimmed string after 
 | Public API | Result and behavior |
 | --- | --- |
 | `validateAddress(input, chain, options?)` | `ValidationResult`; invalid addresses return `valid: false` |
-| `validateBatch(inputs, chain, options?)` | Results in input order; accepts a readonly array |
+| `validateBatch(inputs, chain, options?)` | One result per original array index, in order. Missing rows receive an invalid result. Accepts a readonly array. |
 | `isSupportedChain(value)` | Boolean and TypeScript type guard for unknown chain input |
 | `SUPPORTED_CHAINS` | Frozen list of supported identifiers; useful for a chain selector |
 | `detectBlockchain(input, options?)` | One chain, candidate array, or `null`; never proof of chain ownership |
@@ -140,7 +140,7 @@ The full minified ESM bundle is approximately **7.2 kB gzip**, and the Solana-on
 | `cosmos`, `osmosis`, `sei` | Bech32 account prefixes `cosmos`, `osmo`, `sei`; 20- or 32-byte payloads |
 | `celestia`, `injective` | Bech32 account prefixes `celestia`, `inj`; 20-byte payloads |
 | `sui` | `0x` followed by exactly 64 hex digits |
-| `aptos` | Full 32-byte hexadecimal addresses or special addresses `0x0` through `0xf`; strict canonical AIP-40 mode |
+| `aptos` | Full 32-byte hexadecimal addresses or single-digit special addresses, each with a lowercase `0x` prefix. Default mode accepts either hex letter case. Strict mode requires the canonical AIP-40 spelling. |
 | `near` | 2-64 character account IDs with lowercase letters, numbers, and valid separators; named, implicit, Ethereum-like, deterministic, and universal forms |
 
 For Cardano Byron addresses, the address type, network magic, and length of the encrypted path use the shortest CBOR encoding. Validation checks these fields even when the CRC32 matches.

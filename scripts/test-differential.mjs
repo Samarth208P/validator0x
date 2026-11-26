@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import { keccak_256 } from '@noble/hashes/sha3.js';
-import { base58, bech32, bech32m } from '@scure/base';
+import { base58, base58xrp, bech32, bech32m } from '@scure/base';
 import { validateAddress, detectBlockchain, addChecksum, COSMOS_CHAINS } from '../dist/index.mjs';
 
 // Test the internal primitives independently without adding public API surface.
@@ -15,11 +15,26 @@ async function sourceModule(name) {
 const { keccak256 } = await sourceModule('keccak256');
 const { sha256 } = await sourceModule('sha256');
 const { encodeBase58, decodeBase58 } = await sourceModule('base58');
+const { decodeBech32 } = await sourceModule('bech32');
 let checks = 0;
 function equal(actual, expected, message) { assert.deepEqual(actual, expected, message); checks++; }
 function bytes(length, seed = 0) { return Uint8Array.from({ length }, (_, i) => (i * 71 + seed * 37) & 255); }
 function sha(data) { return createHash('sha256').update(data).digest(); }
 function checked(data) { return base58.encode(Uint8Array.from([...data, ...sha(sha(data)).subarray(0, 4)])); }
+
+// Exercise HRP expansion, the last separator, and the six checksum words independently of chain syntax.
+for (const hrp of ['a', 'a1z', '?~', 'a'.repeat(83)]) {
+    for (const length of new Set([0, 1, 32, 90 - hrp.length - 7])) {
+        if (hrp.length + 7 + length > 90) continue;
+        const data = Array.from({ length }, (_, i) => (i * 13 + length) & 31);
+        for (const [encoding, codec] of [['bech32', bech32], ['bech32m', bech32m]]) {
+            const encoded = codec.encode(hrp, data);
+            equal(decodeBech32(encoded.toUpperCase()), { hrp, data, encoding }, `${encoding} HRP and payload`);
+            const mutation = encoded.slice(0, -1) + (encoded.endsWith('q') ? 'p' : 'q');
+            equal(decodeBech32(mutation), null, `${encoding} checksum mutation`);
+        }
+    }
+}
 
 for (let length = 0; length <= 300; length++) {
     const input = bytes(length);
@@ -50,12 +65,14 @@ function eip55(hex) {
 }
 function referenceEvm(input, strict) {
     const hex = input.startsWith('0x') ? input.slice(2) : input;
-    if (!/^[0-9a-fA-F]{40}$/.test(hex) || /^0+$/.test(hex)) return { valid: false };
+    if (hex.length !== 40) return { valid: false, errorCode: 'INVALID_LENGTH' };
+    if (!/^[0-9a-fA-F]{40}$/.test(hex)) return { valid: false, errorCode: 'INVALID_CHARACTERS' };
+    if (/^0+$/.test(hex)) return { valid: false, errorCode: 'BURN_ADDRESS' };
     const checksum = hex === eip55(hex);
     const mixed = hex !== hex.toLowerCase() && hex !== hex.toUpperCase();
-    return (strict || mixed) && !checksum ? { valid: false } : { valid: true, checksum };
+    return (strict || mixed) && !checksum ? { valid: false, errorCode: 'INVALID_CHECKSUM' } : { valid: true, checksum };
 }
-const evmSeeds = ['0x' + '1'.repeat(40), '0xde709f2102306220921060314715629080e2fb77', '0x52908400098527886E0F7030069857D2E4169EE7'];
+const evmSeeds = ['0x' + '0'.repeat(40), '0x' + '1'.repeat(40), '0xde709f2102306220921060314715629080e2fb77', '0x52908400098527886E0F7030069857D2E4169EE7'];
 for (let seed = 0; seed < 40; seed++) {
     const hex = Buffer.from(bytes(20, seed)).toString('hex');
     evmSeeds.push('0x' + eip55(hex), '0x' + hex, '0x' + hex.toUpperCase(), eip55(hex));
@@ -71,7 +88,8 @@ for (const seed of evmSeeds) {
         for (const strict of [false, true]) {
             const expected = referenceEvm(input, strict);
             const actual = validateAddress(input, 'ethereum', { strict });
-            equal(actual.valid ? { valid: true, checksum: actual.details?.checksum } : { valid: false }, expected, `EVM reference ${input} strict=${strict}`);
+            const result = actual.valid ? { valid: true, checksum: actual.details?.checksum } : { valid: false, errorCode: actual.details?.errorCode };
+            equal(result, expected, `EVM reference ${input} strict=${strict}`);
         }
     }
 }
@@ -89,6 +107,21 @@ for (const [chain, hrp] of [['bitcoin', 'bc'], ['bitcoin', 'tb'], ['litecoin', '
     }
 }
 const versions = { bitcoin: [0, 5, 111, 196], litecoin: [48, 50, 5, 111, 58, 196], dogecoin: [30, 22, 113, 196], tron: [65] };
+// Both alphabets encode each leading zero byte as one copy of their first character.
+for (let leadingZeros = 0; leadingZeros <= 20; leadingZeros++) {
+    const payload = new Uint8Array(21);
+    payload.set(bytes(20 - leadingZeros, 1), 1 + leadingZeros);
+    const checksum = sha(sha(payload)).subarray(0, 4);
+    const raw = Uint8Array.from([...payload, ...checksum]);
+    for (const [chain, codec] of [['bitcoin', base58], ['ripple', base58xrp]]) {
+        equal(validateAddress(codec.encode(raw), chain).valid, true, `${chain} with ${leadingZeros} leading account zero bytes`);
+        for (let i = 0; i < checksum.length; i++) {
+            const corrupted = raw.slice();
+            corrupted[payload.length + i] ^= 1;
+            equal(validateAddress(codec.encode(corrupted), chain).details?.errorCode, 'INVALID_CHECKSUM', `${chain} checksum byte ${i}`);
+        }
+    }
+}
 for (let version = 0; version < 256; version++) {
     const address = checked(Uint8Array.from([version, ...bytes(20, 3)]));
     for (const [chain, allowed] of Object.entries(versions)) equal(validateAddress(address, chain).valid, allowed.includes(version), `${chain} Base58 version ${version}`);

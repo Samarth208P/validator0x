@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 - 2026-11-26
 
 - Cardano Byron validation rejects noncanonical CBOR encodings of the address type, network magic, and encrypted path length.
 - Cardano Byron validation accepts variable-length encrypted derivation paths, including the 32-byte paths in the ledger fixtures.
 - Bitcoin BIP-433 fee anchors return `details.format === 'anchor'`. Both payment examples reject them as recipients.
 - An unsupported `network` option value throws a `RangeError` from validation, batch validation, detection, and validator `validate` methods, before any input is read. Previously it reported `NETWORK_MISMATCH` for addresses that encode a network and was ignored for other chains. `undefined` and `null` still mean `auto`.
+- Invalid network values are rejected without calling their conversion hooks. Unsafe address inputs return structured errors without creating an exception for each row.
+- Arrays passed to `validateBatch` produce one result per original index, even with a custom iterator or inherited values at missing indices.
+- Aptos accepts uppercase hex letters in short special addresses by default, including `0xF`. Strict mode requires the lowercase AIP-40 form. EVM validators report malformed repeated prefixes consistently and skip hashing digit-only addresses.
+- Chain detection validates the shared EVM format once and preserves the full ordered candidate list. Cosmos validators reject mismatched prefixes before decoding the payload.
+- Bitcoin-family and XRP addresses share the Base58 decoder and checksum logic. Bech32 and Bech32m use one checksum pass, reject non-ASCII input, and decode padding into a preallocated byte array. Cardano pointer parsing enforces each field's bounds during decoding.
+- Keccak-256 uses 32-bit operations. SHA-256 and Base58Check reduce intermediate allocations. The package keeps zero runtime dependencies.
+- Expanded regression and independent reference tests cover address mutations, checksum error codes, padding, pointer boundaries, Cosmos account formats, and ambiguous detection. Packed-consumer tests verify named exports, type identity, browser globals, and both documented payment examples. The benchmark now exercises sparse batches.
 
 ## 0.4.0
 

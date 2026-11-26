@@ -1,25 +1,15 @@
 import { ValidationError } from '../types';
 
 export class InputSanitizer {
-    static sanitize(input: unknown): string {
-        if (input === null || input === undefined) {
-            throw new Error(ValidationError.UNSAFE_INPUT);
-        }
-
-        if (typeof input !== 'string') {
-            throw new Error(ValidationError.UNSAFE_INPUT);
-        }
-
+    static trySanitize(input: unknown): string | null {
         // Bound work before scanning or trimming the input.
-        if (input.length > 256) {
-            throw new Error(ValidationError.UNSAFE_INPUT);
-        }
-
-        // Check for dangerous control characters
-        if (/[^\x20-\x7E]/.test(input)) {
-            throw new Error(ValidationError.UNSAFE_INPUT);
-        }
-
+        if (typeof input !== 'string' || input.length > 256 || /[^\x20-\x7E]/.test(input)) return null;
         return input.trim();
+    }
+
+    static sanitize(input: unknown): string {
+        const safe = InputSanitizer.trySanitize(input);
+        if (safe === null) throw new Error(ValidationError.UNSAFE_INPUT);
+        return safe;
     }
 }

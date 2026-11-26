@@ -19,14 +19,36 @@ describe('Additional chain families', () => {
             expect(validateAddress('0x' + 'gg'.repeat(32), chain).valid).toBe(false);
         }
     });
-    test('Aptos canonical special addresses follow AIP-40', () => {
-        const long = '0x' + '0'.repeat(63) + 'a';
-        expect(validateAddress('0xa', 'aptos', { strict: true }).valid).toBe(true);
-        expect(validateAddress(long, 'aptos').valid).toBe(true);
-        expect(validateAddress(long, 'aptos', { strict: true }).valid).toBe(false);
-        expect(validateAddress('0x123', 'aptos').valid).toBe(false);
+    test.each([...'0123456789abcdef'])('Aptos accepts and formats short and long forms of special address 0x%s', digit => {
+        const canonical = '0x' + digit;
+        for (const hex of new Set([digit, digit.toUpperCase()])) {
+            for (const input of ['0x' + hex, '0x' + hex.padStart(64, '0')]) {
+                expect(validateAddress(input, 'aptos').valid).toBe(true);
+                expect(validateAddress(input, 'aptos', { strict: true }).valid).toBe(input === canonical);
+                expect(formatAddress(' ' + input + ' ', 'aptos')).toBe(canonical);
+            }
+        }
+    });
+    test('Aptos keeps the first ordinary address full length and rejects padded short forms', () => {
+        const firstOrdinary = '0x' + '10'.padStart(64, '0');
+        expect(validateAddress(firstOrdinary, 'aptos', { strict: true }).valid).toBe(true);
+        expect(formatAddress(firstOrdinary, 'aptos')).toBe(firstOrdinary);
+        for (const input of ['0x10', '0x123', '0x0A', '0XA', 'A', '0xG']) {
+            expect(validateAddress(input, 'aptos').valid).toBe(false);
+            expect(() => formatAddress(input, 'aptos')).toThrow();
+        }
         expect(validateAddress('0xa', 'sui').valid).toBe(false);
-        expect(formatAddress(long, 'aptos')).toBe('0xa');
+    });
+    test('Aptos detection and formatting apply canonical case independently of Sui', () => {
+        // AIP-40 LONG example with a significant leading zero digit.
+        const canonical = '0x043ec2cb158e3569842d537740fd53403e992b9e7349cc5d3dfaa5aff8faaef2';
+        const uppercase = '0x' + canonical.slice(2).toUpperCase();
+        expect(detectBlockchain(uppercase)).toEqual(['sui', 'aptos']);
+        expect(detectBlockchain(uppercase, { strict: true })).toBe('sui');
+        expect(formatAddress(uppercase, 'aptos')).toBe(canonical);
+        expect(detectBlockchain(canonical, { strict: true })).toEqual(['sui', 'aptos']);
+        expect(detectBlockchain('0xA')).toBe('aptos');
+        expect(detectBlockchain('0xA', { strict: true })).toBeNull();
     });
     test.each(['alice.near', 'sub.account.testnet', 'alice-bob_123.near', 'a'.repeat(64), '0x' + 'b'.repeat(40), 'root'])('validates NEAR account ID %s', address => {
         expect(validateAddress(address, 'near').valid).toBe(true);

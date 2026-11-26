@@ -12,10 +12,32 @@ import { gzipSync } from 'node:zlib';
 import { runInNewContext } from 'node:vm';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const temp = mkdtempSync(join(tmpdir(), 'validator0x-consumer-'));
 const npm = process.env.npm_execpath;
 assert.ok(npm, 'Run this check using npm run test:package');
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+// Keep this consumer contract independent of the Rollup and declaration generators.
+const families = {
+    './ethereum': ['EthereumValidator'],
+    './evm': ['EvmValidator', 'BscValidator', 'AvalancheValidator', 'ArbitrumValidator', 'OptimismValidator', 'BaseValidator'],
+    './bitcoin': ['BitcoinValidator'],
+    './litecoin': ['LitecoinValidator'],
+    './dogecoin': ['DogecoinValidator'],
+    './solana': ['SolanaValidator'],
+    './ripple': ['RippleValidator'],
+    './cardano': ['CardanoValidator'],
+    './tron': ['TronValidator'],
+    './cosmos': ['CosmosValidator'],
+    './move': ['SuiValidator', 'AptosValidator'],
+    './near': ['NearValidator'],
+    './formatters': ['shortenAddress', 'normalizeAddress', 'addChecksum'],
+};
+const requiredExports = {
+    '.': [
+        'AddressValidator', 'PolygonValidator', 'validateAddress', 'validateBatch', 'formatAddress', 'detectBlockchain',
+        'isSupportedChain', 'SUPPORTED_CHAINS', 'EVM_CHAINS', 'COSMOS_CHAINS', 'ValidationError', ...Object.values(families).flat(),
+    ],
+    ...families,
+};
+const temp = mkdtempSync(join(tmpdir(), 'validator0x-consumer-'));
 const run = (file, args, cwd = temp) => execFileSync(file, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 try {
     // Pack the existing build: prepack normally rebuilds it, but this check follows the build step.
@@ -27,9 +49,13 @@ try {
     const installed = join(temp, 'node_modules', 'validator0x');
     assert.ok(existsSync(join(installed, 'dist/index.mjs')));
     assert.ok(readFileSync(join(installed, 'AGENTS.md'), 'utf8').includes('## Integrating the npm package'));
-    run(process.execPath, ['-e', "require('node:fs').accessSync(require.resolve('validator0x/AGENTS.md'))"]);
+    const pkg = JSON.parse(run(process.execPath, ['-e', `
+        require('node:fs').accessSync(require.resolve('validator0x/AGENTS.md'));
+        console.log(JSON.stringify(require('validator0x/package.json')));
+    `]));
     assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0);
     const entrypoints = Object.keys(pkg.exports).filter(key => key !== './package.json' && key !== './AGENTS.md');
+    for (const path of Object.keys(requiredExports)) assert.ok(entrypoints.includes(path), `Missing package entrypoint: ${path}`);
     const smoke = `
         const address = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
         if (!api.validateAddress(address, 'ethereum', { strict: true }).valid) throw new Error('Checksum validation failed');
@@ -38,10 +64,14 @@ try {
     `;
     for (const extension of ['cjs', 'mjs']) {
         const load = extension === 'cjs' ? 'require' : 'await import';
-        const checks = entrypoints.filter(path => path !== '.').map(path => {
+        const checks = entrypoints.map(path => {
             const id = 'validator0x' + path.slice(1);
             return `{
-                const entries = Object.entries(${load}('${id}'));
+                const entry = ${load}('${id}');
+                for (const name of ${JSON.stringify(requiredExports[path] ?? [])}) {
+                    if (!Object.hasOwn(entry, name) || entry[name] === undefined) throw new Error('Missing export: ${id}.' + name);
+                }
+                const entries = Object.entries(entry);
                 if (!entries.length) throw new Error('Empty entrypoint: ${id}');
                 for (const [name, value] of entries) {
                     if (api[name] !== value) throw new Error('Export identity mismatch: ' + name);
@@ -62,7 +92,8 @@ try {
     run(process.execPath, ['consumer.mjs']);
     // Verify actual declaration resolution in CJS, native ESM, and bundler consumers, without @types/node.
     const types = `
-        import { validateAddress, validateBatch, ValidationError, type AddressValidator, type BlockchainType, type ValidationResult } from 'validator0x';
+        import { validateAddress, validateBatch, ValidationError, type AddressValidator, type BlockchainType, type ValidationResult,
+            type EvmChain, type CosmosChain, type FormatOptions, type ValidationOptions } from 'validator0x';
         import { EthereumValidator } from 'validator0x/ethereum';
         import { CosmosValidator } from 'validator0x/cosmos';
         const chain: BlockchainType = 'tron';
@@ -76,25 +107,33 @@ try {
         void [result, batch, error];
         // @ts-expect-error Unknown chains must remain a type error.
         validateAddress('address', 'made-up-chain');
-    ` + entrypoints.map((path, index) => `\nimport * as entry${index} from ${JSON.stringify(path === '.' ? 'validator0x' : 'validator0x' + path.slice(1))}; void entry${index};`).join('');
+    ` + entrypoints.map((path, index) => {
+        const id = 'validator0x' + path.slice(1);
+        const names = (requiredExports[path] ?? []).map(name => JSON.stringify(name)).join(' | ') || 'never';
+        return `\nimport * as entry${index} from '${id}';
+            const contract${index}: Pick<typeof import('validator0x'), ${names}> = entry${index};`;
+    }).join('');
     for (const extension of ['cts', 'mts', 'ts']) writeFileSync(join(temp, `consumer.${extension}`), types);
+    const recipients = ['README', 'AGENTS'].map(name => {
+        const examples = readFileSync(join(installed, name + '.md'), 'utf8').matchAll(/```ts\r?\n([\s\S]*?)```/g);
+        const recipient = Array.from(examples, match => match[1]).find(code => code.includes('function checkRecipient'));
+        assert.ok(recipient, `Missing recipient example in ${name}.md`);
+        const stem = 'recipient-' + name;
+        writeFileSync(join(temp, stem + '.mts'), recipient);
+        return stem;
+    });
     for (const [module, resolution, files] of [
-        ['NodeNext', 'NodeNext', ['consumer.cts', 'consumer.mts']],
+        ['NodeNext', 'NodeNext', ['consumer.cts', 'consumer.mts', ...recipients.map(stem => stem + '.mts')]],
         ['ESNext', 'Bundler', ['consumer.ts']],
         ['CommonJS', 'Node', ['consumer.ts']],
     ]) {
-        writeFileSync(join(temp, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2020', module, moduleResolution: resolution, strict: true, noEmit: true, types: [], lib: ['ES2020', 'DOM'] }, files }));
+        writeFileSync(join(temp, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2020', module, moduleResolution: resolution, strict: true, noEmit: module !== 'NodeNext', outDir: 'compiled', types: [], lib: ['ES2020', 'DOM'] }, files }));
         run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '-p', join(temp, 'tsconfig.json')]);
     }
-    for (const doc of ['README.md', 'AGENTS.md']) {
-        const examples = readFileSync(join(installed, doc), 'utf8').matchAll(/```ts\r?\n([\s\S]*?)```/g);
-        const recipient = Array.from(examples, match => match[1]).find(code => code.includes('function checkRecipient'));
-        assert.ok(recipient, `Missing recipient example in ${doc}`);
-        writeFileSync(join(temp, 'recipient.mts'), recipient);
-        run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--module', 'NodeNext', '--target', 'ES2020', '--strict', 'recipient.mts']);
+    for (const stem of recipients) {
         run(process.execPath, ['--input-type=module', '-e', `
             import assert from 'node:assert/strict';
-            import { checkRecipient } from './recipient.mjs';
+            import { checkRecipient } from './compiled/${stem}.mjs';
             const evm = 'd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
             assert.equal(checkRecipient(evm, 'base').address, '0x' + evm);
             assert.equal(checkRecipient('bc1pfeessrawgf', 'bitcoin').ok, false);
@@ -105,6 +144,7 @@ try {
     }
     const browser = { TextEncoder };
     runInNewContext(readFileSync(join(installed, 'dist/index.umd.js'), 'utf8'), browser);
+    for (const name of requiredExports['.']) assert.notEqual(browser.validator0x[name], undefined, `Missing UMD export: ${name}`);
     assert.ok(browser.validator0x.validateAddress('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', 'ethereum').valid);
     assert.ok(browser.validator0x.validateAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'bitcoin').valid);
     // Measure complete consumer bundles, including shared chunks.

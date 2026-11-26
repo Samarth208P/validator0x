@@ -1,6 +1,6 @@
 # Releasing validator0x
 
-`0.3.0` was published on 2026-11-13. The commands below target the 0.4.0 candidate. For the next release, choose an unused version, update package.json/package-lock.json and the changelog, and substitute the new version and archive name throughout these commands.
+The commands below target version 0.4.1. For the next release, choose an unused version, update package.json/package-lock.json and the changelog, and substitute the new version and archive name throughout these commands.
 
 Preparation and publication are separate steps. There is no automatic publish workflow; pushing this repository only runs checks.
 
@@ -13,7 +13,7 @@ npm ci
 npm run prepare:release
 ```
 
-This runs lint, source/test type checking, unit tests, production builds, independent differential checks, packed-consumer checks, coverage thresholds, and the dependency audit. It then creates `validator0x-0.4.0.tgz` from the verified build. Build output and tarballs are intentionally not committed.
+This runs lint, source/test type checking, unit tests, production builds, independent differential checks, packed-consumer checks, coverage thresholds, and the dependency audit. It then creates `validator0x-0.4.1.tgz` from the verified build. Build output and tarballs are intentionally not committed.
 
 Before publication:
 
@@ -24,7 +24,7 @@ Before publication:
 5. Dry-run the exact archive, without changing the registry:
 
 ```sh
-npm publish ./validator0x-0.4.0.tgz --dry-run --access public --tag latest --registry=https://registry.npmjs.org/
+npm publish ./validator0x-0.4.1.tgz --dry-run --access public --tag latest --registry=https://registry.npmjs.org/
 ```
 
 Dry-run success verifies packaging, not permission to publish. `npm publish` of a tarball uses the already-built artifact; run all preparation checks before creating it. If source or package contents change afterward, rebuild and reverify the candidate.
@@ -45,13 +45,13 @@ For an agent-assisted release, present the version, commit, verified archive, in
 ## Publish only after approval
 
 ```sh
-npm publish ./validator0x-0.4.0.tgz --access public --tag latest --registry=https://registry.npmjs.org/
+npm publish ./validator0x-0.4.1.tgz --access public --tag latest --registry=https://registry.npmjs.org/
 ```
 
 The command above is an actual public release. Publishing `latest` makes this version the default for future installs.
 
 npm may accept the upload and report that the package is still being processed. During its publish-time scan, the version can return 404 and `latest` can still reference the previous release. Wait and retry read-only registry checks; do not submit the same publish again. Scanning commonly takes a few minutes. See [npm's publish-time scanning announcement](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/).
 
-After publication, verify `npm view validator0x@0.4.0 version dist.integrity --json` matches the candidate, and verify `npm view validator0x dist-tags --json`. Smoke-test an installation of `validator0x@0.4.0` in a fresh project. Update release status/changelog and create the matching Git tag/release as authorized by the maintainer. Do not claim completion until the registry verification succeeds.
+After publication, verify `npm view validator0x@0.4.1 version dist.integrity --json` matches the candidate, and verify `npm view validator0x dist-tags --json`. Smoke-test an installation of `validator0x@0.4.1` in a fresh project. Update release status/changelog and create the matching Git tag/release as authorized by the maintainer. Do not claim completion until the registry verification succeeds.
 
 Reference: [npm login](https://docs.npmjs.com/cli/v11/commands/npm-login/) and [npm publish](https://docs.npmjs.com/cli/v11/commands/npm-publish/).

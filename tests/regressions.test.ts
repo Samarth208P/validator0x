@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
+import { createBase58check } from '@scure/base';
 import { validateAddress, validateBatch, detectBlockchain, formatAddress, addChecksum, normalizeAddress, shortenAddress, EVM_CHAINS, SUPPORTED_CHAINS, isSupportedChain, ValidationError } from '../src';
 import { sha256 } from '../src/utils/sha256';
 import { encodeBase58, decodeBase58 } from '../src/utils/base58';
+import { decodeBase58Check } from '../src/utils/base58check';
 import { decodeBech32, wordsToBytes } from '../src/utils/bech32';
 import vectors from './fixtures/protocol-vectors.json';
 import { PolygonValidator, BscValidator, AvalancheValidator, ArbitrumValidator, OptimismValidator, BaseValidator, EvmValidator, CosmosValidator } from '../src';
@@ -19,13 +21,24 @@ describe('Protocol regressions', () => {
         expect(validateAddress(address.slice(0, -1) + (address.endsWith('q') ? 'p' : 'q'), 'cardano').valid).toBe(false);
     });
     test.each([0, 1, 20, 21, 32, 55, 56, 57, 63, 64, 65, 119, 120, 127, 128, 129, 255, 256, 1024])('SHA-256 matches Node at length %d', length => {
-        const bytes = Uint8Array.from({ length }, (_, i) => i & 255);
-        expect(Buffer.from(sha256(bytes)).toString('hex')).toBe(createHash('sha256').update(bytes).digest('hex'));
+        const backing = Uint8Array.from({ length: length + 5 }, (_, i) => i & 255);
+        const original = backing.slice();
+        const bytes = backing.subarray(3, 3 + length);
+        const expected = createHash('sha256').update(bytes).digest('hex');
+        expect(Buffer.from(sha256(bytes)).toString('hex')).toBe(expected);
+        expect(backing).toEqual(original);
     });
     test.each([0, 1, 2, 20, 32])('round-trips %d zero bytes', length => {
         const bytes = new Uint8Array(length);
         expect(encodeBase58(bytes)).toBe('1'.repeat(length));
         expect(decodeBase58(encodeBase58(bytes))).toEqual(bytes);
+    });
+    test('Base58Check requires a payload even when the four checksum bytes match', () => {
+        const oracle = createBase58check((input: Uint8Array) => createHash('sha256').update(input).digest());
+        expect(decodeBase58Check(oracle.encode(new Uint8Array()))).toBeNull();
+        const versionOnly = Uint8Array.of(0);
+        expect(decodeBase58Check(oracle.encode(versionOnly))).toEqual(versionOnly);
+        expect(decodeBase58Check('0')).toBeNull();
     });
     test('rejects invalid Bech32 HRPs and padding', () => {
         for (const str of ['\x201xj0phk', '\x7f1g6xzxy', '\x801vctc34', 'an84characterslonghumanreadablepartthatcontainsthetheexcludedcharactersbioandnumber11d6pts4']) expect(decodeBech32(str)).toBeNull();

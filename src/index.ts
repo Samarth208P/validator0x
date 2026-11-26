@@ -32,7 +32,15 @@ export function validateBatch(
     const validator = getValidator(blockchain);
     // Check options even for an empty batch, so misconfiguration does not depend on the input.
     assertValidationOptions(options);
-    return Array.from(addresses, addr => validator.validate(addr, options));
+    // Preserve iterable handling for JavaScript callers outside the typed array API.
+    if (!Array.isArray(addresses)) return Array.from(addresses, addr => validator.validate(addr, options));
+    const length = addresses.length;
+    const results = new Array<ValidationResult>(length);
+    for (let index = 0; index < length; index++) {
+        const row = Object.prototype.hasOwnProperty.call(addresses, index) ? addresses[index] : undefined;
+        results[index] = validator.validate(row, options);
+    }
+    return results;
 }
 
 export function formatAddress(

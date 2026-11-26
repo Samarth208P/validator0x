@@ -37,6 +37,33 @@ describe('Cardano', () => {
     });
 });
 
+describe('Cardano pointer fields', () => {
+    // Keep the payment credential from each CIP-19 pointer fixture and replace only its pointer.
+    test.each([4, 5, 14, 15])('enforces canonical unsigned bounds for CIP-19 fixture %i', index => {
+        const { prefix, words } = bech32.decode(vectors.cardano[index] as `${string}1${string}`, 256);
+        const credential = bech32.fromWords(words).slice(0, 29);
+        function accepts(pointer: number[]): boolean {
+            const payload = Uint8Array.from([...credential, ...pointer]);
+            return validateAddress(bech32.encode(prefix, bech32.toWords(payload), 256), 'cardano').valid;
+        }
+        // Maximum slot (uint32) and indices (uint16), in most-significant-group-first order.
+        const fields = [[0x8f, 0xff, 0xff, 0xff, 0x7f], [0x83, 0xff, 0x7f], [0x83, 0xff, 0x7f]];
+        expect(accepts(fields.flat())).toBe(true);
+        for (let field = 0; field < fields.length; field++) {
+            const overflow = fields.map(bytes => [...bytes]);
+            overflow[field][0]++;
+            expect(accepts(overflow.flat())).toBe(false);
+            const nonminimal = fields.map(bytes => [...bytes]);
+            nonminimal[field].unshift(0x80);
+            expect(accepts(nonminimal.flat())).toBe(false);
+            const truncated = fields.slice(0, field + 1).flat();
+            truncated.pop();
+            expect(accepts(truncated)).toBe(false);
+        }
+        expect(accepts([...fields.flat(), 0])).toBe(false);
+    });
+});
+
 // Re-encode a published CIP-19 vector with a different header byte, keeping its payload.
 function withHeader(address: string, header: number): string {
     const { prefix, words } = bech32.decode(address as `${string}1${string}`, 256);

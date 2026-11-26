@@ -1,11 +1,5 @@
 const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 const BASE = 58;
-const LEADER = ALPHABET.charAt(0);
-
-const ALPHABET_MAP: { [key: string]: number } = {};
-for (let i = 0; i < ALPHABET.length; i++) {
-    ALPHABET_MAP[ALPHABET.charAt(i)] = i;
-}
 
 export function encodeBase58(source: Uint8Array): string {
     if (source.length === 0) return '';
@@ -37,41 +31,34 @@ export function encodeBase58(source: Uint8Array): string {
     return digits.reverse().map(d => ALPHABET[d]).join('');
 }
 
-export function decodeBase58(string: string): Uint8Array {
-    if (string.length === 0) return new Uint8Array(0);
+/** Build the digit lookup once for each supported alphabet. */
+export function createBase58Decoder(alphabet: string): (input: string) => Uint8Array {
+    const digits: Record<string, number> = Object.create(null);
+    for (let i = 0; i < alphabet.length; i++) digits[alphabet[i]] = i;
 
-    let i = 0;
-    while (i < string.length && string[i] === LEADER) {
-        i++;
-    }
-    const leaders = i;
+    return (input: string): Uint8Array => {
+        let leaders = 0;
+        while (leaders < input.length && input[leaders] === alphabet[0]) leaders++;
 
-    const bytes = [0];
-
-    for (; i < string.length; i++) {
-        const char = string[i];
-        const value = ALPHABET_MAP[char];
-        if (value === undefined) {
-            throw new Error(`Invalid Base58 character: ${char}`);
+        // Accumulate base-256 digits least significant first.
+        const bytes: number[] = [];
+        for (let i = leaders; i < input.length; i++) {
+            let carry = digits[input[i]];
+            if (carry === undefined) throw new Error(`Invalid Base58 character: ${input[i]}`);
+            for (let j = 0; j < bytes.length; j++) {
+                carry += bytes[j] * BASE;
+                bytes[j] = carry & 0xff;
+                carry >>>= 8;
+            }
+            while (carry > 0) {
+                bytes.push(carry & 0xff);
+                carry >>>= 8;
+            }
         }
-
-        for (let j = 0; j < bytes.length; j++) {
-            bytes[j] *= BASE;
-        }
-        bytes[0] += value;
-
-        let carry = 0;
-        for (let j = 0; j < bytes.length; ++j) {
-            bytes[j] += carry;
-            carry = bytes[j] >> 8;
-            bytes[j] &= 0xff;
-        }
-        while (carry) {
-            bytes.push(carry & 0xff);
-            carry >>= 8;
-        }
-    }
-
-    const resultBytes = string.length === leaders ? [] : bytes.reverse();
-    return Uint8Array.from([...new Array<number>(leaders).fill(0), ...resultBytes]);
+        const decoded = new Uint8Array(leaders + bytes.length);
+        decoded.set(bytes.reverse(), leaders);
+        return decoded;
+    };
 }
+
+export const decodeBase58 = /* @__PURE__ */ createBase58Decoder(ALPHABET);
