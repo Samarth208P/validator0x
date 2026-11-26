@@ -1,8 +1,11 @@
+// Minimum argument values for CBOR's one-, two-, and four-byte extended forms.
+const MIN_EXTENDED_VALUE = [24, 0x100, 0x10000];
+
 /** Minimal bounded CBOR reader for the Byron address envelope, not a general CBOR API. */
 class Reader {
     offset = 0;
     constructor(readonly data: Uint8Array) {}
-    head(major: number): number {
+    head(major: number, canonical = false): number {
         if (this.offset >= this.data.length) throw new Error('Truncated CBOR');
         const initial = this.data[this.offset++];
         if (initial >>> 5 !== major) throw new Error('Invalid CBOR type');
@@ -13,10 +16,11 @@ class Reader {
         if (this.offset + size > this.data.length) throw new Error('Truncated CBOR');
         let value = 0;
         for (let i = 0; i < size; i++) value = value * 256 + this.data[this.offset++];
+        if (canonical && value < MIN_EXTENDED_VALUE[additional - 24]) throw new Error('Noncanonical CBOR argument');
         return value;
     }
-    bytes(): Uint8Array {
-        const length = this.head(2);
+    bytes(canonical = false): Uint8Array {
+        const length = this.head(2, canonical);
         if (this.offset + length > this.data.length) throw new Error('Truncated bytes');
         const value = this.data.slice(this.offset, this.offset + length);
         this.offset += length;
@@ -56,17 +60,17 @@ export function byronNetwork(data: Uint8Array): 'mainnet' | 'testnet' | null {
             const value = inner.bytes();
             if (key === 1) {
                 const path = new Reader(value);
-                path.bytes(); // The encrypted derivation path is an opaque byte string.
+                path.bytes(true); // The encrypted derivation path is a canonical, opaque byte string.
                 path.end();
             }
             if (key === 2) {
                 const magic = new Reader(value);
-                magic.head(0);
+                magic.head(0, true);
                 magic.end();
                 network = 'testnet';
             }
         }
-        const type = inner.head(0);
+        const type = inner.head(0, true);
         if (type !== 0 && type !== 2) return null;
         inner.end();
         return network;

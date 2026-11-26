@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Cardano Byron validation rejects noncanonical CBOR encodings of the address type, network magic, and encrypted path length.
 - Cardano Byron validation accepts variable-length encrypted derivation paths, including the 32-byte paths in the ledger fixtures.
 - Bitcoin BIP-433 fee anchors return `details.format === 'anchor'`. Both payment examples reject them as recipients.
 - An unsupported `network` option value throws a `RangeError` from validation, batch validation, detection, and validator `validate` methods, before any input is read. Previously it reported `NETWORK_MISMATCH` for addresses that encode a network and was ignored for other chains. `undefined` and `null` still mean `auto`.

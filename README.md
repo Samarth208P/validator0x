@@ -143,6 +143,8 @@ The full minified ESM bundle is approximately **7.2 kB gzip**, and the Solana-on
 | `aptos` | Full 32-byte hexadecimal addresses or special addresses `0x0` through `0xf`; strict canonical AIP-40 mode |
 | `near` | 2-64 character account IDs with lowercase letters, numbers, and valid separators; named, implicit, Ethereum-like, deterministic, and universal forms |
 
+For Cardano Byron addresses, the address type, network magic, and length of the encrypted path use the shortest CBOR encoding. Validation checks these fields even when the CRC32 matches.
+
 `avalanche` covers C-Chain addresses. For additional chains using standard Ethereum addresses, use `evm`; chain-specific checksum schemes such as EIP-1191 are outside its scope. For Sei's EVM format, use `evm`; `sei` validates its Bech32 format.
 
 Not supported: Bitcoin/Litecoin regtest HRPs, Litecoin MWEB, XRP X-addresses/destination tags, Cardano addresses longer than 256 characters, Cosmos validator/consensus prefixes, ENS or other name-service resolution. A syntactically valid future witness address is not necessarily spendable under today's consensus rules. Cardano pointer addresses are recognized for compatibility; this does not assert they can be newly created on mainnet. Solana validation does not test curve membership.
