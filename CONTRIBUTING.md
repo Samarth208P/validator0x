@@ -1,33 +1,33 @@
 # Contributing to validator0x
 
-## Local setup
+Bug reports, documentation fixes, and validator improvements are welcome. When reporting a bug, include the package version, chain, options, and a public test address that shows the expected and actual results. For a new address format, link to its protocol specification.
 
-Use Node.js 22.13 or later on the Node 22 line, or a newer supported LTS. From the repository root, install the locked dependencies with `npm ci`. The packed-browser test uses Google Chrome stable. If Chrome is missing, run `npx playwright-core install chrome`.
+## Work locally
 
-## Changing a validator
+Create a branch from `main`. Use Node.js 22.13+ on the 22.x line or a newer supported LTS. From the repository root, run:
 
-Keep validation synchronous and offline with zero runtime dependencies. Put family-specific rules in `src/validators/` and shared encoding or hashing logic in `src/utils/`. Route address input through `AddressValidator.validate` to apply the shared input limit and network policy.
+```sh
+npm ci
+npm test -- tests/evm-prefix.test.ts
+```
 
-For a bug fix, add a regression test using a public API and confirm that it fails on the affected revision. Include a valid control when changing which inputs are accepted. For chain or checksum changes, use published protocol vectors and cover malformed inputs, network options and ambiguous detection where applicable. Compare changes to cryptographic primitives against the independent reference implementations used by the differential suite.
+Replace the example test path with the suite you’re changing. The full package check uses Chrome stable. If you need to install it, run `npx playwright-core install chrome`.
 
-Document changes to public behavior in the README and changelog. For a new entrypoint, follow the export, declaration and packed-consumer requirements in [AGENTS.md](./AGENTS.md).
+## Change a validator
 
-## Before opening a pull request
+Keep validation synchronous, offline, and free of runtime dependencies. For a bug fix, add a public API test that fails before the fix and passes afterward. For address format changes, test both accepted and rejected inputs against published protocol examples. See the [test fixtures](./tests/fixtures/README.md) and [repository instructions](./AGENTS.md) for encoding, network, and detection checks.
 
-Run these commands from the repository root.
+## Open a pull request
+
+Keep each PR focused on one change. Update the README and changelog when public behavior changes. Leave generated coverage reports, build output, and package archives out of the diff.
+
+Run the package checks before requesting review:
 
 ```sh
 npm run check
-npm run test:coverage
 npm audit
 ```
 
-`npm run check` runs lint, type checking, unit tests, the production build, differential comparisons and installation tests against the actual npm tarball. The coverage command enforces the repository thresholds. Use `npm test -- tests/evm-prefix.test.ts` for a focused run while developing.
+Target `main`, explain what changed and why, and include your test results. Link any related issue. For performance changes, include before-and-after measurements on the same inputs and Node.js version.
 
-Open the PR against `main`. Link the issue, describe the user-visible change and include your test results. For a performance change, give the Node version and compare the same inputs on both revisions. Keep generated coverage, build output and package archives out of the diff.
-
-## Merge checks
-
-GitHub requires all seven CI jobs before merging into `main`. Six package jobs run on Ubuntu and Windows with Node 22, 24 and 26. Each installs the locked dependencies, runs the full check and audits dependencies. The seventh job checks coverage on Ubuntu with Node 24. If GitHub marks the branch out of date, update it with the latest `main` and let CI run on the new revision.
-
-For release preparation and publishing permissions, see [RELEASING.md](./RELEASING.md).
+GitHub requires six package checks (Ubuntu and Windows on Node.js 22, 24, and 26). If your branch falls behind `main`, update it and wait for the checks to pass again. Run `npm run test:coverage` locally to check coverage thresholds before a release.
