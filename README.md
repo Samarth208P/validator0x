@@ -54,6 +54,9 @@ export function checkRecipient(address: unknown, chain: unknown) {
   if (!result.valid || typeof address !== 'string') {
     return { ok: false as const, error: result.error ?? 'Invalid address' };
   }
+  if (chain === 'bitcoin' && result.details?.format === 'anchor') {
+    return { ok: false as const, error: 'Choose a Bitcoin payment address. Anyone can spend a fee anchor.' };
+  }
   if (chain === 'cardano' && result.details?.format === 'stake') {
     return { ok: false as const, error: 'Choose a Cardano payment address' };
   }
@@ -69,7 +72,7 @@ The validator trims outer ASCII spaces internally; use the trimmed string after 
 | Public API | Result and behavior |
 | --- | --- |
 | `validateAddress(input, chain, options?)` | `ValidationResult`; invalid addresses return `valid: false` |
-| `validateBatch(inputs, chain, options?)` | Results in input order; accepts a readonly array |
+| `validateBatch(inputs, chain, options?)` | One result per original array index, in order. Missing rows receive an invalid result. Accepts a readonly array. |
 | `isSupportedChain(value)` | Boolean and TypeScript type guard for unknown chain input |
 | `SUPPORTED_CHAINS` | Frozen list of supported identifiers; useful for a chain selector |
 | `detectBlockchain(input, options?)` | One chain, candidate array, or `null`; never proof of chain ownership |
@@ -127,18 +130,20 @@ The full minified ESM bundle is approximately **7.2 kB gzip**, and the Solana-on
 | --- | --- |
 | `ethereum`, `polygon`, `bsc`, `avalanche`, `arbitrum`, `optimism`, `base` | Ethereum 20-byte hexadecimal addresses; EIP-55 checksum |
 | `evm`, `fantom`, `sonic`, `gnosis`, `celo`, `cronos`, `moonbeam`, `moonriver`, `zksync`, `linea`, `scroll`, `mantle`, `blast`, `opbnb`, `zora`, `worldchain` | Same Ethereum/EIP-55 address rules |
-| `bitcoin` | Base58Check P2PKH/P2SH; SegWit v0; Bech32m v1-16, including Taproot; mainnet and testnet |
+| `bitcoin` | Base58Check P2PKH/P2SH; SegWit v0; Bech32m v1-16, including Taproot and [BIP-433 fee anchors](https://github.com/bitcoin/bips/blob/master/bip-0433.mediawiki); mainnet and testnet |
 | `litecoin` | Base58Check P2PKH/P2SH (including legacy shared P2SH prefixes); standard witness v0-16; mainnet and testnet |
 | `dogecoin` | Base58Check P2PKH/P2SH; mainnet and testnet |
 | `solana` | Base58 decoding to exactly 32 bytes, including program addresses and PDAs |
-| `cardano` | Shelley base, enterprise, pointer, and stake addresses; header/network/length/padding checks; Byron CBOR envelope and CRC32 |
+| `cardano` | Shelley base, enterprise, pointer, and stake addresses; header/network/length/padding checks; Byron CBOR envelopes with a 28-byte root, optional variable-length encrypted derivation path, and CRC32 |
 | `ripple` | XRP classic account addresses with the XRP Base58 alphabet and checksum |
 | `tron` | 34-character Base58Check or 42-character hex beginning with `41` |
 | `cosmos`, `osmosis`, `sei` | Bech32 account prefixes `cosmos`, `osmo`, `sei`; 20- or 32-byte payloads |
 | `celestia`, `injective` | Bech32 account prefixes `celestia`, `inj`; 20-byte payloads |
 | `sui` | `0x` followed by exactly 64 hex digits |
-| `aptos` | Full 32-byte hexadecimal addresses or special addresses `0x0` through `0xf`; strict canonical AIP-40 mode |
+| `aptos` | Full 32-byte hexadecimal addresses or single-digit special addresses, each with a lowercase `0x` prefix. Default mode accepts either hex letter case. Strict mode requires the canonical AIP-40 spelling. |
 | `near` | 2-64 character account IDs with lowercase letters, numbers, and valid separators; named, implicit, Ethereum-like, deterministic, and universal forms |
+
+For Cardano Byron addresses, the address type, network magic, and length of the encrypted path use the shortest CBOR encoding. Validation checks these fields even when the CRC32 matches.
 
 `avalanche` covers C-Chain addresses. For additional chains using standard Ethereum addresses, use `evm`; chain-specific checksum schemes such as EIP-1191 are outside its scope. For Sei's EVM format, use `evm`; `sei` validates its Bech32 format.
 

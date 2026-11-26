@@ -105,6 +105,19 @@ describe('Ethereum Validator', () => {
 });
 
 describe('EIP-55 results for uniform-case vectors', () => {
+    test('digit-only addresses retain their exact checksum and burn policy', () => {
+        for (const prefix of ['', '0x']) {
+            for (const lastDigit of ['0', '1', '9']) {
+                const body = '0'.repeat(39) + lastDigit;
+                const address = prefix + body;
+                expect(formatAddress(address, 'ethereum', { checksum: true })).toBe('0x' + body);
+                expect(validateAddress(address, 'ethereum', { strict: true, allowBurnAddress: true }))
+                    .toEqual({ valid: true, blockchain: 'ethereum', details: { checksum: true } });
+                expect(validateAddress(address, 'ethereum', { strict: true }).valid).toBe(lastDigit !== '0');
+            }
+        }
+    });
+
     // EIP-55 vectors whose checksummed form is entirely lowercase or uppercase letters.
     const lowerVector = '0xde709f2102306220921060314715629080e2fb77';
     const upperVector = '0x52908400098527886E0F7030069857D2E4169EE7';

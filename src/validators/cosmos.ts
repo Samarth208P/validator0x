@@ -12,12 +12,13 @@ export class CosmosValidator extends AddressValidator {
     }
 
     protected validateImplementation(address: string): ValidationResult {
-        const decoded = decodeBech32(address);
-        const payload = decoded && wordsToBytes(decoded.data);
-        const lengths = this.chain === 'injective' || this.chain === 'celestia' ? [20] : [20, 32];
-        if (!decoded || decoded.hrp !== prefixes[this.chain] || decoded.encoding !== Bech32Encoding.BECH32 || !payload || !lengths.includes(payload.length)) {
-            return { valid: false, error: 'Invalid account prefix, checksum, length, or padding', details: { errorCode: ValidationError.INVALID_FORMAT } };
+        const decoded = decodeBech32(address, 90, prefixes[this.chain]);
+        if (decoded?.encoding === Bech32Encoding.BECH32) {
+            const length = wordsToBytes(decoded.data)?.length;
+            if (length === 20 || (length === 32 && this.chain !== 'injective' && this.chain !== 'celestia')) {
+                return { valid: true, blockchain: this.chain, details: { format: 'bech32', checksum: true } };
+            }
         }
-        return { valid: true, blockchain: this.chain, details: { format: 'bech32', checksum: true } };
+        return { valid: false, error: 'Invalid account prefix, checksum, length, or padding', details: { errorCode: ValidationError.INVALID_FORMAT } };
     }
 }

@@ -1,6 +1,10 @@
 import { ValidationResult, ValidationOptions, FormatOptions, ValidationError } from '../types';
 import { InputSanitizer } from '../security/sanitizer';
 
+function unsafeInputResult(): ValidationResult {
+    return { valid: false, error: 'Unsafe input detected', details: { errorCode: ValidationError.UNSAFE_INPUT } };
+}
+
 /**
  * Options come from the caller, not the end user, so a typo fails loudly instead of as NETWORK_MISMATCH.
  * Every public entry point calls this before reading input, so the error does not depend on the data.
@@ -8,7 +12,7 @@ import { InputSanitizer } from '../security/sanitizer';
 export function assertValidationOptions(options?: ValidationOptions): void {
     const network = options?.network;
     if (network != null && network !== 'mainnet' && network !== 'testnet' && network !== 'auto') {
-        throw new RangeError(`Invalid network option: ${String(network)} (expected 'mainnet', 'testnet' or 'auto')`);
+        throw new RangeError("Invalid network option (expected 'mainnet', 'testnet' or 'auto')");
     }
 }
 
@@ -22,7 +26,8 @@ export abstract class AddressValidator {
         assertValidationOptions(options);
         try {
             // Security: Sanitize input first
-            const safeAddress = InputSanitizer.sanitize(address);
+            const safeAddress = InputSanitizer.trySanitize(address);
+            if (safeAddress === null) return unsafeInputResult();
 
             // Perform validation on sanitized input
             const result = this.validateImplementation(safeAddress, options);
@@ -37,7 +42,7 @@ export abstract class AddressValidator {
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
             if (message === ValidationError.UNSAFE_INPUT) {
-                return { valid: false, error: 'Unsafe input detected', details: { errorCode: ValidationError.UNSAFE_INPUT } };
+                return unsafeInputResult();
             }
             return { valid: false, error: message, details: { errorCode: ValidationError.INVALID_FORMAT } };
         }

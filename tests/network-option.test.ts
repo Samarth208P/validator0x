@@ -7,6 +7,16 @@ const evm = '0x52908400098527886E0F7030069857D2E4169EE7';
 const invalidNetworks = ['foo', 'Mainnet', 'main', '', 1, true, {}];
 
 describe('network option', () => {
+    test('rejects object values without calling their conversion methods', () => {
+        for (const network of [Object.create(null), { toString() { throw new Error('Unexpected conversion'); } }]) {
+            const options = { network } as never;
+            expect(() => validateAddress(mainnet, 'bitcoin', options)).toThrow(RangeError);
+            expect(() => validateBatch([], 'bitcoin', options)).toThrow(RangeError);
+            expect(() => detectBlockchain(null, options)).toThrow(RangeError);
+            expect(() => new BitcoinValidator().validate(null, options)).toThrow(RangeError);
+        }
+    });
+
     describe.each(invalidNetworks)('invalid value %j', network => {
         const options = { network } as never;
 

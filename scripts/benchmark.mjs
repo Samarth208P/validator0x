@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks';
-import { validateAddress, detectBlockchain } from '../dist/index.mjs';
+import { validateAddress, validateBatch, detectBlockchain } from '../dist/index.mjs';
 
 const iterations = 10000;
 for (const [chain, address] of [
@@ -18,3 +18,14 @@ for (const [chain, address] of [
 const start = performance.now();
 for (let i = 0; i < 1000; i++) detectBlockchain('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
 console.log(`EVM detection: ${(1000000 / (performance.now() - start)).toFixed(0)} detections/s`);
+
+const rows = new Array(512);
+for (let i = 0; i < rows.length; i += 2) rows[i] = 'alice.near';
+const sample = validateBatch(rows, 'near');
+if (sample.length !== rows.length || sample.filter(result => result.valid).length !== rows.length / 2) {
+    throw new Error('Unexpected sparse batch fixture results');
+}
+for (let i = 0; i < 20; i++) validateBatch(rows, 'near');
+const batchStart = performance.now();
+for (let i = 0; i < 100; i++) validateBatch(rows, 'near');
+console.log(`512-row NEAR batches (half empty): ${(100000 / (performance.now() - batchStart)).toFixed(0)} batches/s`);

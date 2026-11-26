@@ -4,6 +4,9 @@ import { decodeBase58 } from '../utils/base58';
 import { decodeBech32, Bech32Encoding, wordsToBytes } from '../utils/bech32';
 import { byronNetwork } from '../utils/byron';
 
+// Pointer fields are the slot number, transaction index and certificate index, in order.
+const POINTER_LIMITS = [0xffffffff, 0xffff, 0xffff];
+
 export class CardanoValidator extends AddressValidator {
     protected validateImplementation(address: string): ValidationResult {
         if (/^(addr|stake)(_test)?1/i.test(address)) return this.validateShelley(address);
@@ -34,14 +37,17 @@ export class CardanoValidator extends AddressValidator {
 
     private validPointer(bytes: Uint8Array): boolean {
         let offset = 29;
-        for (let field = 0; field < 3; field++) {
-            let value = 0n;
-            const start = offset;
+        for (const limit of POINTER_LIMITS) {
+            if (bytes[offset] === 0x80) return false; // Redundant leading zero group.
+            let value = 0;
+            let byte: number;
             do {
-                if (offset >= bytes.length || offset - start >= 10) return false;
-                value = (value << 7n) | BigInt(bytes[offset] & 127);
-            } while ((bytes[offset++] & 128) !== 0);
-            if ((offset - start > 1 && bytes[start] === 128) || value > (field === 0 ? 0xffffffffn : 0xffffn)) return false;
+                if (offset >= bytes.length) return false;
+                byte = bytes[offset++];
+                value = value * 128 + (byte & 127);
+                // The preceding value fit in 32 bits, so this step is exact in a JS number.
+                if (value > limit) return false;
+            } while ((byte & 128) !== 0);
         }
         return offset === bytes.length;
     }

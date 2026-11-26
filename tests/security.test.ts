@@ -1,6 +1,6 @@
 import { InputSanitizer } from '../src/security/sanitizer';
 import { ValidationError } from '../src/types';
-import { validateAddress } from '../src';
+import { AddressValidator, validateAddress } from '../src';
 
 describe('Input Sanitizer', () => {
     test('should pass valid strings', () => {
@@ -39,10 +39,21 @@ describe('Input Sanitizer', () => {
         expect(result.error).toBe('Unsafe input detected');
     });
 
-    test('sanitizes input before validation', () => {
-        const invalid = 'test\x00String';
-        const result = validateAddress(invalid, 'ethereum');
-        expect(result.valid).toBe(false);
-        expect(result.error).toBe('Unsafe input detected');
+    test('distinguishes safe blank input at the length limit from oversized input', () => {
+        expect(validateAddress(' '.repeat(256), 'ethereum').details?.errorCode).toBe(ValidationError.INVALID_LENGTH);
+        expect(validateAddress(' '.repeat(257), 'ethereum').details?.errorCode).toBe(ValidationError.UNSAFE_INPUT);
+    });
+
+    test('reports errors raised by custom validator implementations', () => {
+        class RejectingValidator extends AddressValidator {
+            protected validateImplementation(address: string): never {
+                throw new Error(address);
+            }
+        }
+        const validator = new RejectingValidator();
+        expect(validator.validate(ValidationError.UNSAFE_INPUT)).toEqual(validateAddress(null, 'ethereum'));
+        expect(validator.validate('Malformed payload')).toEqual({
+            valid: false, error: 'Malformed payload', details: { errorCode: ValidationError.INVALID_FORMAT },
+        });
     });
 });

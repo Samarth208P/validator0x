@@ -1,6 +1,6 @@
 {
   "name": "validator0x",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Lightweight, zero-dependency wallet address validation for EVM, Bitcoin, Solana, TRON, Cosmos, Cardano, Sui, Aptos, NEAR and more.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

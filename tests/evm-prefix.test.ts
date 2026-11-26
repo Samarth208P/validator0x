@@ -1,4 +1,4 @@
-import { detectBlockchain, EVM_CHAINS, validateAddress, validateBatch } from '../src';
+import { detectBlockchain, EVM_CHAINS, validateAddress, validateBatch, ValidationError } from '../src';
 
 describe('EVM address prefixes', () => {
     // After stripping one prefix, the remaining 40 characters still contain an x.
@@ -6,7 +6,9 @@ describe('EVM address prefixes', () => {
     const checksummed = '0x52908400098527886E0F7030069857D2E4169EE7';
 
     test.each(EVM_CHAINS)('%s rejects a repeated prefix with default options', chain => {
-        expect(validateAddress(repeatedPrefix, chain).valid).toBe(false);
+        expect(validateAddress(repeatedPrefix, chain)).toMatchObject({
+            valid: false, details: { errorCode: ValidationError.INVALID_CHARACTERS },
+        });
     });
 
     test('detection finds no candidate for the repeated prefix', () => {

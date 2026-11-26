@@ -1,3 +1,4 @@
+import { bech32m } from '@scure/base';
 import { validateAddress, BitcoinValidator } from '../src';
 
 describe('Bitcoin Validator', () => {
@@ -31,6 +32,33 @@ describe('Bitcoin Validator', () => {
             );
             expect(result.valid).toBe(true);
             expect(result.details?.format).toBe('taproot');
+        });
+    });
+
+    describe('Pay to Anchor (BIP-433)', () => {
+        test.each([
+            ['bc1pfeessrawgf', 'mainnet'],
+            ['tb1pfees9rn5nz', 'testnet'],
+        ])('recognizes %s as an anchor', (address, network) => {
+            for (const input of [address, address.toUpperCase()]) {
+                expect(validateAddress(input, 'bitcoin')).toMatchObject({
+                    valid: true, details: { format: 'anchor', network, checksum: true },
+                });
+            }
+        });
+
+        test('only labels the exact Bitcoin v1 witness program as an anchor', () => {
+            const program = [0x4e, 0x73];
+            for (const [chain, prefix, version, bytes] of [
+                ['bitcoin', 'bc', 2, program],
+                ['bitcoin', 'bc', 1, [0x4e, 0x72]],
+                ['bitcoin', 'bc', 1, [...program, 0]],
+                ['litecoin', 'ltc', 1, program],
+            ] as const) {
+                const words = bech32m.toWords(Uint8Array.from(bytes));
+                const address = bech32m.encode(prefix, [version, ...words]);
+                expect(validateAddress(address, chain)).toMatchObject({ valid: true, details: { format: 'future' } });
+            }
         });
     });
 
