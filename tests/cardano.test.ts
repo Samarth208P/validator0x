@@ -5,6 +5,19 @@ import vectors from './fixtures/protocol-vectors.json';
 // Published Byron example from CIP-19 (testnet).
 const byron = '37btjrVyb4KDXBNC4haBVPCrro8AQPHwvCMp3RFhhSVWwfFmZ6wwzSK6JK1hY6wHNmtrpTf1kdbva8TCneM2YsiXT7mrzT21EacHnPpz5YyUdj64na';
 describe('Cardano', () => {
+    // Address0 through Address4 from the Byron ledger golden tests (see fixtures/README.md).
+    test.each([
+        ['Address0', '2RhQhCGqYPDpFgTsnBTbnvPvCwpqAkjwLqQkWpkqXbLRmNxd4xNd262nGsr8JiynyKRUeMLSJ9Ntho9i76uvBTrVXdJJG5yiNLb8frmUe5qX7E', 'mainnet'],
+        ['Address1', 'Ae2tdPwUPEZDoUnyXuAgqzhkjNXNJeiZ5nqwprg9sArZmRNjySfJ5uz4FjB', 'mainnet'],
+        ['Address2', '2RhQhCGqYPDpeh7hWZC5PsveBT6mdsT5TGN8RyWBGFECyke59YY6XfQPWK1wrPZVErkpS73P52oQG17DN7H72tgiwh8kzxcAzaqoANgRfWk7eX', 'mainnet'],
+        ['Address3', 'EqGAuA8vHnP7SX5x2Hfg3RoZ1NBKMXmUD4Xb2cuCUXrUTsjygD2z1m2gqH424vMJqJVd2BjGNVMJPYsHDwyAAAbVhS8vgwxq7SakzaD3nMdx81mX1ftMN32', 'testnet'],
+        ['Address4', '2cWKMJemoBajJUiNitJqprhZ3Ladi6QKWwAAnuvvQCmRFZU1xzpsPNCewNRp8zWu5jAm8', 'testnet'],
+    ] as const)('decodes ledger fixture %s', (_fixture, address, network) => {
+        expect(validateAddress(address, 'cardano', { network })).toMatchObject({
+            valid: true, details: { format: 'byron', network, checksum: true },
+        });
+    });
+
     test('validates a complete Byron envelope and CRC32', () => {
         expect(validateAddress(byron, 'cardano')).toMatchObject({ valid: true, details: { format: 'byron', network: 'testnet' } });
         expect(validateAddress(byron.slice(0, -1) + 'b', 'cardano').valid).toBe(false);

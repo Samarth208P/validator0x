@@ -56,7 +56,7 @@ export function byronNetwork(data: Uint8Array): 'mainnet' | 'testnet' | null {
             const value = inner.bytes();
             if (key === 1) {
                 const path = new Reader(value);
-                if (path.bytes().length !== 28) return null;
+                path.bytes(); // The encrypted derivation path is an opaque byte string.
                 path.end();
             }
             if (key === 2) {
